@@ -36,7 +36,7 @@
   },
   "betterScripts": {
     "dev": {
-      "command": "yarn run util:buildWebpackConfig && webpack-dev-server --content-base ../yasgui --public 0.0.0.0 --host 0.0.0.0 --port 4000 --config  ./webpack/config.js --disable-host-check",
+      "command": "yarn run util:buildWebpackConfig && webpack-dev-server  --public 0.0.0.0 --host 0.0.0.0 --port 4000 --config  ./webpack/config.js --disable-host-check",
       "env": {
         "NODE_ENV": "development"
       }
@@ -50,9 +50,15 @@
   },
   "dependencies": {
     "@turf/turf": "^5.1.6",
+    "@types/leaflet": "^1.5.7",
+    "@types/lodash": "^4.14.149",
     "@types/lodash-webpack-plugin": "^0.11.3",
     "@types/mini-css-extract-plugin": "^0.9.0",
     "@types/optimize-css-assets-webpack-plugin": "^5.0.1",
+    "@types/point-in-polygon": "^1.0.0",
+    "@types/react-router-dom": "^5.1.3",
+    "@types/react-toastify": "^4.1.0",
+    "file-loader": "^5.0.2",
     "leaflet": "^1.6.0",
     "leaflet.marker.highlight": "^0.0.3",
     "leaflet.markercluster": "^1.4.1",
@@ -62,6 +68,8 @@
     "point-in-geopolygon": "^1.0.1",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
+    "react-router": "^5.1.2",
+    "react-router-dom": "^5.1.2",
     "react-scripts": "^3.3.0",
     "react-spinners": "^0.8.0",
     "semantic-ui-react": "^0.88.2",

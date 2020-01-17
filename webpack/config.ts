@@ -135,7 +135,11 @@ export const genericConfig: webpack.Configuration = {
           //   // options: { }
           // }
         ]
-      }
+      },
+      {
+        test: /\.png$/,
+        loader: "file-loader"
+      },
     ]
   },
   resolve: {

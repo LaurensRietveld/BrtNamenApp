@@ -21,6 +21,6 @@ module.exports = {
     ],
     "no-debugger": 2,
     "jest/no-focused-tests": errLevel,
-    "lodash/import-scope": [errLevel, "member"]
+    // "lodash/import-scope": [errLevel, "member"]
   }
 };
