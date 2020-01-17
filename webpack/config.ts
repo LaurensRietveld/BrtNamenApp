@@ -124,6 +124,12 @@ export const genericConfig: webpack.Configuration = {
         use: ["source-map-loader"],
         enforce: "pre"
       },
+
+      {
+        test: /\.worker\.js$/,
+        use: { loader: "worker-loader" }
+      },
+
       {
         test: /\.css$/,
         use: [
@@ -139,7 +145,7 @@ export const genericConfig: webpack.Configuration = {
       {
         test: /\.png$/,
         loader: "file-loader"
-      },
+      }
     ]
   },
   resolve: {

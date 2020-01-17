@@ -2,21 +2,22 @@
 App
  */
 * {
-  margin : 0;
+  margin: 0;
   box-sizing: border-box;
 
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-  "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-  sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
+    "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-body, .App, #root {
+body,
+.App,
+#root {
   height: 100vh;
 }
 
-.App{
+.App {
   align-items: stretch;
   display: flex;
   flex-direction: row;
@@ -48,7 +49,7 @@ Map
   text-align: center;
 }
 
-.subTextMarker{
+.subTextMarker {
   font-size: 80%;
 }
 
@@ -64,14 +65,14 @@ Map
 /*
 Linker deel
  */
-.brtInfo{
+.brtInfo {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
 
 .header {
-  margin : 1%;
+  margin: 1%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,17 +88,17 @@ Linker deel
   color: black;
 }
 
-.header > *{
+.header > * {
   display: inline;
 }
 
 .searchBar {
-  padding : 1%;
+  padding: 1%;
 }
 
 .footer {
   text-align: center;
-  margin : 1%;
+  margin: 1%;
 }
 
 /**
@@ -117,7 +118,6 @@ Linker deel resultaten stuk
 .resultPartContainer {
   flex: 1;
   overflow: auto;
-
 }
 
 .backButton {
@@ -127,11 +127,11 @@ Linker deel resultaten stuk
   font-style: italic;
 }
 
-.loadingButton{
+.loadingButton {
   border-bottom: 0;
 }
 
-.nonLoadingButton{
+.nonLoadingButton {
   border-bottom: 4px lightblue solid;
 }
 
@@ -160,16 +160,17 @@ ul {
   padding: 2%;
   background: white;
   border-radius: 10px;
-  box-shadow: 0px 2px 1px -1px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 1px 3px 0px rgba(0,0,0,0.12);
+  box-shadow: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 3px 0px rgba(0, 0, 0, 0.12);
   cursor: pointer;
 }
 
-.hoofdText{
+.hoofdText {
   font-size: 110%;
   margin-bottom: 0%;
 }
 
-.subText{
+.subText {
   font-size: 80%;
 }
 
@@ -177,12 +178,12 @@ ul {
   padding: 5%;
 }
 
-.objectScreen > h1{
+.objectScreen > h1 {
   margin-bottom: 1%;
 }
 
-.objectScreen > h3{
-  color: #2C84CB;
+.objectScreen > h3 {
+  color: #2c84cb;
   margin: 1% 0% 3%;
 }
 
@@ -195,19 +196,18 @@ ul {
   width: 100%;
 }
 
-.attributeSectionObjectScreen td:last-child{
+.attributeSectionObjectScreen td:last-child {
   overflow-wrap: break-word;
   width: 60%;
 }
 
-table{
+table {
   word-break: break-all;
 }
 
-.dropDownItem *{
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-  "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-  sans-serif;
+.dropDownItem * {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
+    "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-size: 1em;
@@ -218,12 +218,12 @@ table{
   float: left;
 }
 
-.toast-background{
+.toast-background {
   border-radius: 10px;
   background: white;
   color: black;
 }
 
-.toast-progress-bar{
+.toast-progress-bar {
   background: skyblue;
 }
