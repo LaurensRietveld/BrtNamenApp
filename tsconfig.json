@@ -18,6 +18,6 @@
     "rootDir": ".",
     "baseUrl": "."
   },
-  "include": ["./src/**/*", "./webpack/**/*"],
+  "include": ["./typings-custom/main.d.ts","./src/**/*", "./webpack/**/*"],
   "compileOnSave": false
 }

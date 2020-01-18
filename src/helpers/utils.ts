@@ -417,75 +417,75 @@ export function getColor(type: string): string {
  * Wordt door de front-end gebruikt om de layering te bepalen.
  * @param list de lijst die jezelf kan sorteren.
  */
-export function sortByObjectClass(list: any[]) {
-  list.sort((a, b) => {
-    a = a.properties;
-    b = b.properties;
+export function sortByObjectClass(list: GeoJSON.Feature<GeoJSON.Geometry,BrtObject | BrtCluster>[]) {
+  return list.sort((a, b) => {
+    const objA = a.properties as BrtObject | BrtCluster;
+    const objB = b.properties as BrtObject | BrtCluster;
 
-    if (a.getType() === "Provincie" || b.getType() === "Provincie") {
-      if (a.getType() === "Provincie" && b.getType() === "Provincie") {
+    if (objA.type === "Provincie" || objB.type === "Provincie") {
+      if (objA.type === "Provincie" && objB.type === "Provincie") {
         return 0;
-      } else if (a.getType() === "Provincie") {
+      } else if (objA.type === "Provincie") {
         return -1;
       } else {
         return 1;
       }
     }
 
-    if (a.getType() === "Gemeente" || b.getType() === "Gemeente") {
-      if (a.getType() === "Gemeente" && b.getType() === "Gemeente") {
+    if (objA.type === "Gemeente" || objB.type === "Gemeente") {
+      if (objA.type === "Gemeente" && objB.type === "Gemeente") {
         return 0;
-      } else if (a.getType() === "Gemeente") {
+      } else if (objA.type === "Gemeente") {
         return -1;
       } else {
         return 1;
       }
     }
 
-    if (a.getType() === "Woonkern" || b.getType() === "Woonkern") {
-      if (a.getType() === "Woonkern" && b.getType() === "Woonkern") {
+    if (objA.type === "Woonkern" || objB.type === "Woonkern") {
+      if (objA.type === "Woonkern" && objB.type === "Woonkern") {
         return 0;
-      } else if (a.getType() === "Woonkern") {
+      } else if (objA.type === "Woonkern") {
         return -1;
       } else {
         return 1;
       }
     }
 
-    if (a.getType() === "Stadsdeel" || b.getType() === "Stadsdeel") {
-      if (a.getType() === "Stadsdeel" && b.getType() === "Stadsdeel") {
+    if (objA.type === "Stadsdeel" || objB.type === "Stadsdeel") {
+      if (objA.type === "Stadsdeel" && objB.type === "Stadsdeel") {
         return 0;
-      } else if (a.getType() === "Stadsdeel") {
+      } else if (objA.type === "Stadsdeel") {
         return -1;
       } else {
         return 1;
       }
     }
 
-    if (a.getType() === "Wijk" || b.getType() === "Wijk") {
-      if (a.getType() === "Wijk" && b.getType() === "Wijk") {
+    if (objA.type === "Wijk" || objB.type === "Wijk") {
+      if (objA.type === "Wijk" && objB.type === "Wijk") {
         return 0;
-      } else if (a.getType() === "Wijk") {
+      } else if (objA.type === "Wijk") {
         return -1;
       } else {
         return 1;
       }
     }
 
-    if (a.getType() === "Buurt" || b.getType() === "Buurt") {
-      if (a.getType() === "Buurt" && b.getType() === "Buurt") {
+    if (objA.type === "Buurt" || objB.type === "Buurt") {
+      if (objA.type === "Buurt" && objB.type === "Buurt") {
         return 0;
-      } else if (a.getType() === "Buurt") {
+      } else if (objA.type === "Buurt") {
         return -1;
       } else {
         return 1;
       }
     }
 
-    if (a.getObjectClass() === "Gebouw" || b.getObjectClass() === "Gebouw") {
-      if (a.getObjectClass() === "Gebouw" && b.getObjectClass() === "Gebouw") {
+    if (objA.objectClass === "Gebouw" || objB.objectClass === "Gebouw") {
+      if (objA.objectClass === "Gebouw" && objB.objectClass === "Gebouw") {
         return 0;
-      } else if (a.getObjectClass() === "Gebouw") {
+      } else if (objA.objectClass === "Gebouw") {
         return 1;
       } else {
         return -1;
@@ -499,7 +499,6 @@ export function sortByObjectClass(list: any[]) {
 /**
  * Verander elk eerste letter naar een hoofdletter
  * @param text
- * @returns {string}
  */
 export function firstLetterCapital(text: string): string {
   return text
@@ -635,20 +634,17 @@ let latestString: string;
 
  */
 export async function clusterObjects(res: BrtObject[], text: string, isMax?: boolean) {
-  console.log('custer objects?')
   //kijk eerst of de webbrowser een webworker heeft. Anders doe het in de ui thread.
   if (window.Worker) {
     //laatste string waarop is gezocht.
     latestString = text;
-    console.log('starting worker')
     //als er nog geen webworker is maak er dan eentje aan.
     if (!worker) {
-      worker = require('./cluster.worker')()
+      worker = require("./cluster.worker")();
     }
-    console.log(res)
     //post de res objecten naar de worker.
     worker.postMessage({ res: res, text: text, isMax: isMax });
-    return new Promise<{results: Array<BrtObject|BrtCluster>, exact:boolean}>((resolve, reject) => {
+    return new Promise<{ results: Array<BrtObject | BrtCluster>; exact: boolean }>((resolve, reject) => {
       //als de werker klaar is moet je het weer omzetten naar Javascript classen.
       worker.onmessage = (workerResponse: {
         data: {
@@ -676,7 +672,7 @@ export async function clusterObjects(res: BrtObject[], text: string, isMax?: boo
             if (isMax) {
               toastMax();
             }
-            resolve({results, exact: text !== undefined})
+            resolve({ results, exact: text !== undefined });
             //zet de res van buiten.
             // setMethod(res, text === undefined);
           }
@@ -696,7 +692,10 @@ export async function clusterObjects(res: BrtObject[], text: string, isMax?: boo
  * @param res
 
  */
-export function bringExactNameToFront(string: string, res: Array<BrtObject | BrtCluster>):Array<BrtObject | BrtCluster> {
+export function bringExactNameToFront(
+  string: string,
+  res: Array<BrtObject | BrtCluster>
+): Array<BrtObject | BrtCluster> {
   let j = 0;
   string = string.toUpperCase();
 
@@ -1030,4 +1029,30 @@ export function getHexFromColor(color: string, text?: boolean): string {
       return undefined;
     }
   }
+}
+
+export function objectOrClusterToGeojson(val: BrtObject | BrtCluster):GeoJSON.Feature<GeoJSON.Geometry,BrtObject | BrtCluster> {
+
+    return {
+      type: "Feature",
+      properties: val,
+      geometry: val.geojson
+    };
+}
+
+export function getAllObjectsOrClustersAsFeature(values: Array<BrtObject | BrtCluster>):GeoJSON.Feature[]  {
+    let geojson:GeoJSON.Feature<GeoJSON.Geometry,BrtObject | BrtCluster>[]  =[]
+
+    for (const val of values) {
+      if ('values' in val) {
+          geojson.push(objectOrClusterToGeojson(val));
+      } else if (val.geojson && isShownClickedResults(val)) {
+        geojson.push(objectOrClusterToGeojson(val));
+          // geojson.push(res.getAsFeature());
+      }
+    }
+
+    geojson = sortByObjectClass(geojson);
+    return geojson
+
 }

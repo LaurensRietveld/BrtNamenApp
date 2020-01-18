@@ -38,6 +38,10 @@ body,
   flex-direction: column;
 }
 
+.goldMarker {
+  //Make sure this is drawn over other markers
+  z-index:9999 !important;
+}
 /**
 Map
  */

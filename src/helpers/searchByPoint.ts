@@ -3,30 +3,31 @@ import * as wellKnown from "wellknown";
 import * as utils from "./utils";
 import {sortByGeoMetryAndName} from '../helpers/utils'
 import {SparqlResults, Binding} from './sparql'
-import {BrtObject} from '../reducer'
+import {BrtObject,ContextQuery} from '../reducer'
 /**
  * Haalt dingen op aan de hand van de gegeven coordinaten.
  *
  * @param lat waar geklikt is
- * @param long waar geklikt is
- * @param top van de kaart frame
- * @param left van de kaart frame
- * @param bottom van de kaart frame
- * @param right van de kaart frame
+ * @param lng waar geklikt is
+ * @param north van de kaart frame
+ * @param east van de kaart frame
+ * @param soutch van de kaart frame
+ * @param west van de kaart frame
  * @param setResFromOutside met deze methode kan je de resultaten van buiten de app zetten. Je moet wel "waiting" als string
  * terug geven.
  */
-export async function getFromCoordinates(lat:number, long:number, top:number, left:number, bottom:number, right:number, onStartClustering: () => void) {
+ export async function getFromCoordinates(ctx:ContextQuery, onStartClustering: () => void) {
+    let {lat,lng,north,east,south,west} = ctx;
     //check of de gebruiker te ver is uitgezoomd. Zet dan je eigen coordinaten.
-    if (right - left > 0.05 || top - bottom > 0.0300) {
-        left = long - 0.025;
-        right = long + 0.025;
-        top = lat + 0.01500;
-        bottom = lat - 0.01500;
+    if (west - east > 0.05 || north - south > 0.0300) {
+        east = lng - 0.025;
+        west = lng + 0.025;
+        north = lat + 0.01500;
+        south = lat - 0.01500;
     }
 
     //haal alle niet straten op.
-    const nonstreets = await queryTriply(queryForCoordinatesNonStreets(top, left, bottom, right));
+    const nonstreets = await queryTriply(queryForCoordinatesNonStreets(north, east, south, west));
 
     //Zet deze om in een array met Resultaat.js
     const nonstreetsResults = await makeSearchScreenResults(nonstreets);
@@ -34,8 +35,8 @@ export async function getFromCoordinates(lat:number, long:number, top:number, le
     //De straten worden in een kleinere straal opgehaald dus doe hier de berekeningen.
     let stop = lat - 0.0022804940130103546;//((top - bottom) / 2) * factor;
     let sbottom = lat + 0.0022804940130103546;//((top - bottom) / 2) * factor;
-    let sright = long + 0.0033634901046750002;//((right - left) / 2) * factor;
-    let sleft = long - 0.0033634901046750002;//((right - left) / 2) * factor;
+    let sright = lng + 0.0033634901046750002;//((right - left) / 2) * factor;
+    let sleft = lng - 0.0033634901046750002;//((right - left) / 2) * factor;
 
     const streets = await queryTriply(queryForCoordinatesStreets(stop, sleft, sbottom, sright));
 
@@ -101,7 +102,7 @@ async function makeSearchScreenResults(results: SparqlResults) {
      * Voor elke object
      */
     map.forEach((valueMap, key, _map) => {
-        let naam, type, geoJson, color, objectClass;
+        let name, type, geoJson, color, objectClass;
 
         //dit sorteert de resultaten op gemeomety en dan naam.
         //dus bijv Polygoon voor linestring
@@ -112,28 +113,28 @@ async function makeSearchScreenResults(results: SparqlResults) {
         //Kijk eerst of het een brug of etc naam is.
         if (fO.brugnaam || fO.tunnelnaam || fO.sluisnaam || fO.knooppuntnaam) {
             if (fO.brugnaam) {
-                naam = fO.brugnaam.value;
+                name = fO.brugnaam.value;
             } else if (fO.tunnelnaam) {
-                naam = fO.tunnelnaam.value;
+                name = fO.tunnelnaam.value;
             } else if (fO.sluisnaam) {
-                naam = fO.sluisnaam.value;
+                name = fO.sluisnaam.value;
             } else {
-                naam = fO.knooppuntnaam.value;
+                name = fO.knooppuntnaam.value;
             }
 
-            naam = naam.replace(/\|/g, "");
+            name = name.replace(/\|/g, "");
             //anders off naam eerst
         } else if (fO.offnaam) {
-            naam = fO.offnaam.value;
+            name = fO.offnaam.value;
             //anders friese naam eerst
         } else if (fO.naamFries) {
-            naam = fO.naamFries.value;
+            name = fO.naamFries.value;
             //anders naam nl eerst
         } else if (fO.naamNl) {
-            naam = fO.naamNl.value;
+            name = fO.naamNl.value;
             //anders de gewone naam eerst
         } else if (fO.naam) {
-            naam = fO.naam.value;
+            name = fO.naam.value;
         }
 
         //krijg de type
@@ -172,7 +173,7 @@ async function makeSearchScreenResults(results: SparqlResults) {
         }
 
         //maak een Resultaat object en push deze naar de array.
-        returnObject.push({url: key, name: naam, type:type, geojson:geoJson, color:color, objectClass:objectClass});
+        returnObject.push({url: key, name: name, type:type, geojson:geoJson, color:color, objectClass:objectClass});
     });
 
     return returnObject;
