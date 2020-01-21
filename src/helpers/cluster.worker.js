@@ -3,7 +3,6 @@ importScripts('https://cdn.jsdelivr.net/npm/@turf/turf@5/turf.min.js');
 
 self.onmessage = e=>{
     let res = e.data.res;
-
     //dit is de code om Resultaat.js objecten te clusteren.
     let map = new Map();
 
@@ -21,13 +20,13 @@ self.onmessage = e=>{
             res.splice(i, 1);
         }
     }
-
+    // console.log()
     let clusterMap = new Map();
-
+    // console.log('size1',map.size)
     //hierna cluster op basis van locatie. Kijk of de objecten wel aanliggend zijn.
     map.forEach((value, key, map) => {
         let mapCounter = 0;
-
+        // console.log('arr length',value)
         //terwijl er nog objecten zijn die nog niet een naaste object hebben gevonden.
         while (value.length > 0) {
             //pak de eerste
@@ -42,7 +41,7 @@ self.onmessage = e=>{
             //liggen
             for (let i = 0; i < cluster.length; i++) {
                 for (let j = value.length - 1; j >= 0; j--) {
-                   // if (!cluster[i].geojson || !value[j].geojson) continue;
+                   if (!cluster[i].geojson || !value[j].geojson) continue;
                     // eslint-disable-next-line no-undef
                     let inter = turf.lineIntersect(cluster[i].geojson, value[j].geojson);
 
@@ -87,17 +86,17 @@ self.onmessage = e=>{
 
         // eslint-disable-next-line no-undef
         geoJSON = turf.union(...geoJSON).geometry;
-        // if (value.length === 1) {
-        //   //cluster of length 1
-        //   objectsNotInClusters.push({
-        //       name: first.name,
-        //       type: first.type,
-        //       url: first.url,
-        //       geojson: geoJSON,
-        //       color: first.color,
-        //       objectClass: first.objectClass
-        //   })
-        // } else {
+        if (value.length === 1) {
+          //cluster of length 1
+          objectsNotInClusters.push({
+              name: first.name,
+              type: first.type,
+              url: first.url,
+              geojson: geoJSON,
+              color: first.color,
+              objectClass: first.objectClass
+          })
+        } else {
 
           clusters.push({
             name: first.name,
@@ -108,7 +107,7 @@ self.onmessage = e=>{
             color: first.color,
             objectClass: first.objectClass
           });
-        // }
+        }
     });
 
     let returnobject = {

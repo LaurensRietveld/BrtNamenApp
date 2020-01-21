@@ -102,6 +102,9 @@ export const reducer: React.Reducer<State, Action> = immer.produce((state: State
       state.isClustering = false;
       state.searchQuery = ""; //context search, so want search query empty
       state.contextQuery = action.value
+      state.searchResults = []
+      state.selectedObject = null;
+      state.selectedCluster = null
       return state;
     case "context_search_error":
       state.isFetching = false;
@@ -131,6 +134,8 @@ export const reducer: React.Reducer<State, Action> = immer.produce((state: State
       return state;
     case "zoomChange":
       state.zoomLevel = action.value;
+      if (state.zoomLevel < 10 && !state.mapClustered) state.mapClustered = true
+      if (state.zoomLevel >= 10 && state.mapClustered) state.mapClustered = false
       return state;
     default:
       return state;
