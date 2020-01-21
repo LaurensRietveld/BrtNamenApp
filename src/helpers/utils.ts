@@ -17,7 +17,6 @@ import { SparqlResults, Binding } from "./sparql";
 
 /**
  * Een file die alle classen van de brt bevat. Object klassen staan achter aan.
- * @type {*[]}
  */
 let classes = [
   "Grasland",
@@ -417,7 +416,7 @@ export function getColor(type: string): string {
  * Wordt door de front-end gebruikt om de layering te bepalen.
  * @param list de lijst die jezelf kan sorteren.
  */
-export function sortByObjectClass(list: GeoJSON.Feature<GeoJSON.Geometry,BrtObject | BrtCluster>[]) {
+export function sortByObjectClass(list: GeoJSON.Feature<GeoJSON.Geometry, BrtObject | BrtCluster>[]) {
   return list.sort((a, b) => {
     const objA = a.properties as BrtObject | BrtCluster;
     const objB = b.properties as BrtObject | BrtCluster;
@@ -662,7 +661,7 @@ export async function clusterObjects(res: BrtObject[], text: string, isMax?: boo
 
           //als de gebruiker niets nieuws heeft opgezocht.
           if (originalquery === latestString) {
-            let results = [...data.objectsNotInClusters, data.clusters] as Array<BrtObject | BrtCluster>;
+            let results = [...data.objectsNotInClusters, ...data.clusters] as Array<BrtObject | BrtCluster>;
 
             if (text !== undefined) {
               //sorteer het nog even zodat exacte resultaten naar voren komen.
@@ -1031,28 +1030,27 @@ export function getHexFromColor(color: string, text?: boolean): string {
   }
 }
 
-export function objectOrClusterToGeojson(val: BrtObject | BrtCluster):GeoJSON.Feature<GeoJSON.Geometry,BrtObject | BrtCluster> {
-
-    return {
-      type: "Feature",
-      properties: val,
-      geometry: val.geojson
-    };
+export function objectOrClusterToGeojson(
+  val: BrtObject | BrtCluster
+): GeoJSON.Feature<GeoJSON.Geometry, BrtObject | BrtCluster> {
+  return {
+    type: "Feature",
+    properties: val,
+    geometry: val.geojson
+  };
 }
 
-export function getAllObjectsOrClustersAsFeature(values: Array<BrtObject | BrtCluster>):GeoJSON.Feature[]  {
-    let geojson:GeoJSON.Feature<GeoJSON.Geometry,BrtObject | BrtCluster>[]  =[]
+export function getAllObjectsOrClustersAsFeature(values: Array<BrtObject | BrtCluster>): GeoJSON.Feature[] {
+  let geojson: GeoJSON.Feature<GeoJSON.Geometry, BrtObject | BrtCluster>[] = [];
 
-    for (const val of values) {
-      if ('values' in val) {
-          geojson.push(objectOrClusterToGeojson(val));
-      } else if (val.geojson && isShownClickedResults(val)) {
-        geojson.push(objectOrClusterToGeojson(val));
-          // geojson.push(res.getAsFeature());
-      }
+  for (const val of values) {
+    if ("values" in val) {
+      geojson.push(objectOrClusterToGeojson(val));
+    } else if (val.geojson && isShownClickedResults(val)) {
+      geojson.push(objectOrClusterToGeojson(val));
+      // geojson.push(res.getAsFeature());
     }
+  }
 
-    geojson = sortByObjectClass(geojson);
-    return geojson
-
+  return sortByObjectClass(geojson);
 }

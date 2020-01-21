@@ -42,7 +42,7 @@ self.onmessage = e=>{
             //liggen
             for (let i = 0; i < cluster.length; i++) {
                 for (let j = value.length - 1; j >= 0; j--) {
-                    if (!cluster[i].geojson || !value[j].geojson) continue;
+                   // if (!cluster[i].geojson || !value[j].geojson) continue;
                     // eslint-disable-next-line no-undef
                     let inter = turf.lineIntersect(cluster[i].geojson, value[j].geojson);
 
@@ -87,26 +87,28 @@ self.onmessage = e=>{
 
         // eslint-disable-next-line no-undef
         geoJSON = turf.union(...geoJSON).geometry;
-        if (value.length === 1) {
-          //cluster of length 1
-          objectsNotInClusters.push({
-              name: first.name,
-              type: first.type,
-              geojson: geoJSON,
-              color: first.color,
-              objectClass: first.objectClass
-          })
-        } else {
+        // if (value.length === 1) {
+        //   //cluster of length 1
+        //   objectsNotInClusters.push({
+        //       name: first.name,
+        //       type: first.type,
+        //       url: first.url,
+        //       geojson: geoJSON,
+        //       color: first.color,
+        //       objectClass: first.objectClass
+        //   })
+        // } else {
 
           clusters.push({
             name: first.name,
+            url: first.url,
             type: first.type,
             geojson: geoJSON,
             values: value,
             color: first.color,
             objectClass: first.objectClass
           });
-        }
+        // }
     });
 
     let returnobject = {

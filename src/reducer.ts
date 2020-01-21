@@ -32,7 +32,7 @@ export type Action =
   | { type: "context_search_start", value: ContextQuery }
   | { type: "context_search_success"; results: State["searchResults"] }
   | { type: "context_search_error" }
-  | { type: "context_search_clustering" }
+  | { type: "clustering" }
   | { type: "setMapClustered"; value: boolean }
   | { type: "zoomChange"; value: number }
   // | { type: "clustering_success"; results: State["searchResults"] }
@@ -77,24 +77,28 @@ export const reducer: React.Reducer<State, Action> = immer.produce((state: State
       state.searchQuery = action.value;
       state.isFetching = !!action.value;
       return state;
-    case "typeSearch":
+    case "search_start":
       state.searchResults = [];
-
       state.selectedObject = undefined;
       state.selectedCluster = undefined;
-      state.searchQuery = action.value;
       state.isFetching = !!action.value;
       return state;
+    case "search_error":
+      state.isFetching = false;
+      state.isClustering = false;
+    return state;
+      case "search_success":
+      state.isFetching = false;
+      state.isClustering = false;
+      state.searchResults = action.results;
+      return state;
+
     case "context_search_start":
       state.isFetching = true;
       state.isClustering = false;
       state.searchQuery = ""; //context search, so want search query empty
       state.contextQuery = action.value
       return state;
-    case "context_search_start":
-      state.isClustering = true;
-      state.isFetching = false;
-      break;
     case "context_search_error":
       state.isFetching = false;
       state.isClustering = false;
@@ -103,14 +107,6 @@ export const reducer: React.Reducer<State, Action> = immer.produce((state: State
       state.isFetching = false;
       state.isClustering = false;
       state.searchResults = action.results;
-      return state;
-
-    case "search_start":
-      state.searchResults = [];
-      state.selectedObject = undefined;
-      state.selectedCluster = undefined;
-      state.searchQuery = action.value;
-      state.isFetching = !!action.value;
       return state;
     case "reset":
       return initialState;

@@ -10,7 +10,6 @@ import * as GeoJson from "geojson";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles.scss";
 import * as Reducer from "./reducer";
-import { getFromCoordinates } from "./helpers/searchByPoint";
 import { getHexFromColor, objectOrClusterToGeojson, getAllObjectsOrClustersAsFeature } from "./helpers/utils";
 import { DefaultIcon, Icons } from "./components/Icons";
 /**
@@ -25,6 +24,14 @@ let map: L.Map;
 let geoJsonLayer: L.GeoJSON;
 let markerGroup: any;
 let popup: L.Popup;
+
+// export interface FeatureMouseProperties {
+//   onMouseOut?: () => void
+//   onMouseOver?: () => void
+// }
+export type FeatureProperties = Reducer.BrtCluster | Reducer.BrtObject;
+export type BrtFeature = GeoJson.Feature<GeoJson.Geometry, FeatureProperties>;
+
 
 export function init(opts: {
   onContextSearch: (context: {
@@ -112,7 +119,7 @@ export function init(opts: {
      * Wordt aangeroepen elke keer als er een geojson object wordt getekend.
      **/
     onEachFeature: handleGeoJsonLayerDrawing,
-    pointToLayer: addMarker,
+    pointToLayer: addMarker as any,
     style: getStyle as any
   }).addTo(map);
 
@@ -174,13 +181,14 @@ export function toggleClustering(toggle: boolean) {
   }
 }
 
-const makeMarker = (
-  feature: GeoJson.Feature<GeoJson.Geometry, Reducer.BrtCluster | Reducer.BrtCluster>,
-  latlng: L.LatLng
-) => {
-  //maake en marker aan
+const addMarkerForNonPoint = (feature: BrtFeature, latlng: L.LatLng) => {
+  //maak een marker aan
   let marker = L.marker(latlng);
-
+  marker.feature = {
+    type: "Feature",
+    geometry: { type: "Point", coordinates: [latlng.lat, latlng.lng] },
+    properties: feature.properties
+  };
   //dit is de pop up en de html die tevoorschijn komt.
   marker.bindPopup(
     `<div class = "marker">
@@ -210,8 +218,6 @@ const makeMarker = (
 
   //wanneer je over de marker gaat laat de pop up zien
   marker.on("mouseover", onHover);
-  // //geef deze ook aan de feature zodat wanneer je over de resultaten lijst gaat het ook op de kaart te zien is.
-  // feature.properties._setOnHover(onHover);
 
   //wanneer je er van af gaat laat het weg
   marker.on("mouseout", onHoverOff);
@@ -226,11 +232,15 @@ const makeMarker = (
 };
 
 const getAllFeaturesFromLeaflet = () => {
-  return geoJsonLayer.getLayers().map((l: any) => l.feature) as GeoJson.Feature<
-    GeoJSON.Geometry,
-    Reducer.BrtObject | Reducer.BrtCluster
-  >[];
+  return geoJsonLayer.getLayers().map((l: any) => l.feature) as BrtFeature[];
 };
+
+export function findMarkerByUrl(url: string) {
+  return markerGroup.getLayers().find((l: any) => {
+    const feature: BrtFeature = l.feature;
+    return feature.properties.url === url;
+  });
+}
 
 /**
  * Krijg alle geojson objecten die in de resultatenhouder zit waar dit punt in zit.
@@ -243,7 +253,6 @@ const getAllGeoJsonObjectContainingPoint = (lng: number, lat: number) => {
     return inside.feature(col, [lng, lat]) !== -1;
   });
 
-  // console.log('geojsonlayer',geoJsonLayer)
   // if (this.state.results.getClickedResult()) {
   //     res = [this.state.results.getClickedResult().getAsFeature()];
   // } else if (this.state.results.getClickedCluster()) {
@@ -328,139 +337,143 @@ const handleGeoJsonLayerDrawing = (
   feature: GeoJson.Feature<GeoJson.Geometry, Reducer.BrtCluster | Reducer.BrtCluster>,
   layer: L.Layer
 ) => {
-  //de punt wordt al afgehandeld door addMarker
-  if (feature.geometry.type !== "Point") {
-    //vindt eerst de center
-    let latLong = getCenterGeoJson(feature);
 
-    //op deze center voeg een marker toe
-    markerGroup.addLayer(makeMarker(feature, latLong));
+  if (feature.geometry.type === "Point") return
 
-    //laat de pop up zien als je erover gaat
-    layer.on("mouseover", e => {
-      //krijg eerst alle geojson objecten die dit punt bevatten.
-      let contains = getAllGeoJsonObjectContainingPoint((e as any).latlng.lng, (e as any).latlng.lat);
-      //hierna maak de popup content aan met html
-      let content = contains
-        .map((res: any) => {
-          return `<b>${res.properties.name}</b><br/>
+  //vindt eerst de center
+  let latLong = getCenterGeoJson(feature);
+
+  //op deze center voeg een marker toe
+  markerGroup.addLayer(addMarkerForNonPoint(feature, latLong));
+
+  //laat de pop up zien als je erover gaat
+  layer.on("mouseover", e => {
+    //krijg eerst alle geojson objecten die dit punt bevatten.
+    let contains = getAllGeoJsonObjectContainingPoint((e as any).latlng.lng, (e as any).latlng.lat);
+    //hierna maak de popup content aan met html
+    let content = contains
+      .map((res: any) => {
+        return `<b>${res.properties.name}</b><br/>
                     <span class="subTextMarker" style="color:${getHexFromColor(res.properties.color, true)};" >${
-            res.properties.type
-          } </span>`;
-        })
-        .reverse()
-        .join(`<br/>`);
+          res.properties.type
+        } </span>`;
+      })
+      .reverse()
+      .join(`<br/>`);
+
+    content = `<div class="popUpMouseOver">${content}<div>`;
+
+    //als er geen dingen zijn die dit punt bevatten sluit dan de popup
+    if (contains.length < 1) {
+      map.closePopup();
+      popup = undefined;
+    } else if (!popup) {
+      //als er nog geen popup open is open dan deze.
+      popup = L.popup({
+        autoPan: false,
+        closeButton: false
+      })
+        .setLatLng((e as any).latlng)
+        .setContent(content)
+        .openOn(map);
+    }
+  });
+
+  //dit is de functie die wordt aangeroepen als je over een object heen gaat met je muis.
+  let mouseOverFunction: L.LeafletEventHandlerFn = e => {
+    let contains = getAllGeoJsonObjectContainingPoint((e as any).latlng.lng, (e as any).latlng.lat);
+
+    let content = contains
+      .map(res => {
+        return `<b>${res.properties.name}</b><br/>
+                    <span class="subTextMarker" style="color:${getHexFromColor(res.properties.color, true)};" >${
+          res.properties.type
+        } </span>`;
+      })
+      .reverse()
+      .join(`<br/>`);
+
+    if (contains.length < 1) {
+      map.closePopup();
+      popup = undefined;
+    } else if (popup) {
+      popup.setLatLng((e as any).latlng);
 
       content = `<div class="popUpMouseOver">${content}<div>`;
 
-      //als er geen dingen zijn die dit punt bevatten sluit dan de popup
-      if (contains.length < 1) {
-        map.closePopup();
-        popup = undefined;
-      } else if (!popup) {
-        //als er nog geen popup open is open dan deze.
-        popup = L.popup({
-          autoPan: false,
-          closeButton: false
-        })
-          .setLatLng((e as any).latlng)
-          .setContent(content)
-          .openOn(map);
+      if (content !== popup.getContent()) {
+        popup.setContent(content);
       }
-    });
+    } else {
+      popup = L.popup({
+        autoPan: false,
+        closeButton: false
+      })
+        .setLatLng((e as any).latlng)
+        .setContent(content)
+        .openOn(map);
+    }
+  };
 
-    //dit is de functie die wordt aangeroepen als je over een object heen gaat met je muis.
-    let mouseOverFunction: L.LeafletEventHandlerFn = e => {
-      let contains = getAllGeoJsonObjectContainingPoint((e as any).latlng.lng, (e as any).latlng.lat);
+  //Je kan ervoor kiezen om deze functionalitiet te throttelen.
+  layer.on("mousemove", _.throttle(mouseOverFunction, 10));
 
-      let content = contains
-        .map(res => {
-          return `<b>${res.properties.name}</b><br/>
-                    <span class="subTextMarker" style="color:${getHexFromColor(res.properties.color, true)};" >${
-            res.properties.type
-          } </span>`;
-        })
-        .reverse()
-        .join(`<br/>`);
+  //sluit de pop up als je er van af gaat
+  layer.on("mouseout", () => {
+    map.closePopup();
+    popup = undefined;
+  });
 
-      if (contains.length < 1) {
-        map.closePopup();
-        popup = undefined;
-      } else if (popup) {
-        popup.setLatLng((e as any).latlng);
+  //als je er op klikt ga er dan naartoe
+  layer.on("click", (e: any) => {
+    //check of er meerdere lagen zijn
+    let contains = getAllGeoJsonObjectContainingPoint(e.latlng.lng, e.latlng.lat);
 
-        content = `<div class="popUpMouseOver">${content}<div>`;
+    //als er maar één laag is
+    if (contains.length < 2) {
+      onClickItem(feature.properties as any);
+    } else {
+      //agrageer de opties en geef deze aan het context menu
+      let options = contains.reverse().map(res => {
+        let func = () => {
+          onClickItem(res.properties);
+        };
 
-        if (content !== popup.getContent()) {
-          popup.setContent(content);
-        }
-      } else {
-        popup = L.popup({
-          autoPan: false,
-          closeButton: false
-        })
-          .setLatLng((e as any).latlng)
-          .setContent(content)
-          .openOn(map);
-      }
-    };
+        return {
+          head: res.properties.name,
+          sub: res.properties.type,
+          subColor: res.properties.color,
+          onClick: func
+        };
+      });
 
-    //Je kan ervoor kiezen om deze functionalitiet te throttelen.
-    layer.on("mousemove", _.throttle(mouseOverFunction, 10));
-
-    //sluit de pop up als je er van af gaat
-    layer.on("mouseout", e => {
-      map.closePopup();
-      popup = undefined;
-    });
-
-    //als je er op klikt ga er dan naartoe
-    layer.on("click", (e: any) => {
-      //check of er meerdere lagen zijn
-      let contains = getAllGeoJsonObjectContainingPoint(e.latlng.lng, e.latlng.lat);
-
-      //als er maar één laag is
-      if (contains.length < 2) {
-        onClickItem(feature.properties as any);
-      } else {
-        //agrageer de opties en geef deze aan het context menu
-        let options = contains.reverse().map(res => {
-          let func = () => {
-            onClickItem(res.properties);
-          };
-
-          return {
-            head: res.properties.name,
-            sub: res.properties.type,
-            subColor: res.properties.color,
-            onClick: func
-          };
-        });
-
-        // this.setState({
-        //     clickedOnLayeredMap: {x: e.originalEvent.pageX, y: e.originalEvent.pageY},
-        //     objectsOverLayedOnMap: options
-        // });
-      }
-    });
-  }
+      // this.setState({
+      //     clickedOnLayeredMap: {x: e.originalEvent.pageX, y: e.originalEvent.pageY},
+      //     objectsOverLayedOnMap: options
+      // });
+    }
+  });
+  // }
 };
 
 /**
  * De functie die de kaart aanroept elke keer als deze een marker wilt toevoegen.
  **/
-const addMarker = (feature: GeoJson.Feature, latlng: L.LatLng) => {
+const addMarker = (feature: GeoJson.Feature, latlng: L.LatLng):void => {
   //maak een marker aan
-  console.log('adding marker', feature)
-  // console.log("should we disable this?. too many markers when clustered");
-  // if (1 == 1) return;
   let marker = L.marker(latlng);
+
+   marker.feature = {
+     type: "Feature",
+     geometry: { type: "Point", coordinates: [latlng.lat, latlng.lng] },
+     properties: feature.properties
+   };
   markerGroup.addLayer(marker);
 
   //dit is de pop up en de html die tevoorschijn komt.
   marker.bindPopup(
     `<div class = "marker">
-                      <b>${feature.properties.name}</b>
+                      <b>${feature.properties.name} </b>
                       <br/>
                       <span class = "subTextMarker" style="color:${getHexFromColor(feature.properties.color, true)};">${
       feature.properties.type
@@ -487,17 +500,16 @@ const addMarker = (feature: GeoJson.Feature, latlng: L.LatLng) => {
   //wanneer je over de marker gaat laat de pop up zien
   marker.on("mouseover", onHover);
   // //geef deze ook aan de feature zodat wanneer je over de resultaten lijst gaat het ook op de kaart te zien is.
-  // feature.properties._setOnHover(onHover);
+  // feature.properties.onHover = onHover;
 
   //wanneer je er van af gaat laat het weg
   marker.on("mouseout", onHoverOff);
-  // feature.properties._setOnHoverOff(onHoverOff);
+  // feature.properties.onHoverOff = onHoverOff;
 
   //wanneer je er op klikt ga naar die marker
   marker.on("click", () => {
     onClickItem(feature.properties as any);
   });
-  return marker;
 };
 
 /**
@@ -563,4 +575,3 @@ const getCenterGeoJson = (geojson: any): L.LatLng => {
 
   return L.latLng(lat, lon);
 };
-// export default App;

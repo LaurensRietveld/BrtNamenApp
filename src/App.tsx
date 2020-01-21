@@ -1,26 +1,21 @@
 /**
  * Libs
  */
-import L from "leaflet";
 import * as LeafletUtils from "./leaflet";
 import React from "react";
-import * as turf from "@turf/turf";
-const inside = require("point-in-geopolygon");
 import _ from "lodash";
-// import "leaflet.markercluster";
-// import * as GeoJson from "geojson";
-import { toast, ToastContainer } from "react-toastify";
+import {  ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles.scss";
 import * as Reducer from "./reducer";
 import { getFromCoordinates } from "./helpers/searchByPoint";
-// import { getHexFromColor, objectOrClusterToGeojson, getAllObjectsOrClustersAsFeature } from "./helpers/utils";
+import { search } from "./helpers/searchByText";
 
 /**
  * UI
  */
 // import Routes from './routes/Routes'
-import { Dropdown, Icon, Search } from "semantic-ui-react";
+import {  Icon, Search } from "semantic-ui-react";
 // import NavBar from "./components/NavBar";
 import Loader from "./components/Loader";
 import StartMessage from "./components/StartMessage";
@@ -49,17 +44,11 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 // import ContextMenu from "./components/ContextMenu";
 // import ClusterObject from "./model/ClusterObject";
 
-interface Props {}
 
-// let map: L.Map;
-// let geoJsonLayer: L.GeoJSON;
-// let markerGroup: any;
-// let popup: L.Popup;
-const App: React.FC<Props> = props => {
+
+const App: React.FC = () => {
   const [state, dispatch] = React.useReducer(Reducer.reducer, Reducer.initialState);
   //Set state in window for debugging
-  (window as any).state = state;
-  (window as any).dispatch = dispatch;
   React.useEffect(() => {
     LeafletUtils.init({
       onZoomChange: zoom => {
@@ -81,7 +70,7 @@ const App: React.FC<Props> = props => {
   React.useEffect(() => {
     if (state.contextQuery) {
       getFromCoordinates(state.contextQuery, () => {
-        dispatch({ type: "context_search_clustering" });
+        dispatch({ type: "clustering" });
         // dispatch({type: 'clustering_start'});
       })
         .then(res => {
@@ -149,14 +138,14 @@ const App: React.FC<Props> = props => {
   /**
    * Wordt aangeroepen wanneer er iets wordt getype
    **/
-  const onSearchChange = (e: any, data: any) => {
+  const onSearchChange = (_e: any, data: any) => {
     let text = data.value;
     LeafletUtils.closePopup();
 
     //als de text iets heeft
     if (text) {
       dispatch({ type: "typeSearch", value: text });
-      doSearch(text);
+      doSearch(text, dispatch);
 
       //zet dan eerst de state
 
@@ -202,45 +191,7 @@ const App: React.FC<Props> = props => {
     LeafletUtils.centerMap();
   };
 
-  /**
-   * Roept de communicator aan en haalt de resultaten op.
-   **/
-  const doSearch = _.debounce((text: string) => {
-    /**
-     * Roep de getMatch functie aan van de communicator
-     **/
-    dispatch({ type: "search_start", value: text });
-    // Promise.resolve().then((res: string) =>{
-    //   if (res === "waiting") {
-    //     dispatch({type:'clustering', value: text})
-    //   }
-    // })
-    // Communicator.getMatch(text.trim(), this.state.currentSelected, this.setResFromOutside).then(res => {
-    //     //als je een error terug krijgt, dan betekent dat je wel een antwoord hebt maar dat het niet werkt.
-    //
-    //     //als er waiting terug komt wacht dan.
-    //     if(res === "waiting"){
-    //         this.setState({
-    //             updateIng : true,
-    //             isFetching: false
-    //         })
-    //         //anders laat niets zien.
-    //     }else if (res === "error") {
-    //         this.setState({
-    //             isFetching: false
-    //         })
-    //
-    //         //als je undefined terug krijgt betekent het dat het een oude search query is.
-    //         //Dus als het niet undefined is, betekent dat het het huidige search query is.
-    //     } else if (res !== undefined) {
-    //
-    //         this.setState({
-    //             isFetching: false
-    //         });
-    //         this.state.results.setResults(res);
-    //     }
-    // });
-  }, 500);
+
 
   /**
    * Wanneer er op het kruisje in de search bar wordt geklikt.
@@ -343,27 +294,27 @@ const App: React.FC<Props> = props => {
   /**
    * Krijg het aantal zoekresultaten
    */
-  const getZoekResultatenAantal = () => {
-    let aantalZoekResultaten: number;
+  // const getZoekResultatenAantal = () => {
+  //   let aantalZoekResultaten: number;
+  //
+  //   // if (this.state.results.getClickedResult()) {
+  //   //
+  //   // } else if (this.state.results.getClickedCluster()) {
+  //   //     aantalZoekResultaten = this.state.results.getClickedCluster().getValues().length;
+  //   // } else if (this.state.results.getRightClickedRes().length > 0) {
+  //   //     aantalZoekResultaten = this.state.results.getRightClickedRes().length;
+  //   // } else {
+  //   //     aantalZoekResultaten = this.state.results.getResults().length;
+  //   // }
+  //   //
+  //   // if (aantalZoekResultaten > 989) {
+  //   //     aantalZoekResultaten = 900 + "+";
+  //   // }
+  //
+  //   return aantalZoekResultaten;
+  // };
 
-    // if (this.state.results.getClickedResult()) {
-    //
-    // } else if (this.state.results.getClickedCluster()) {
-    //     aantalZoekResultaten = this.state.results.getClickedCluster().getValues().length;
-    // } else if (this.state.results.getRightClickedRes().length > 0) {
-    //     aantalZoekResultaten = this.state.results.getRightClickedRes().length;
-    // } else {
-    //     aantalZoekResultaten = this.state.results.getResults().length;
-    // }
-    //
-    // if (aantalZoekResultaten > 989) {
-    //     aantalZoekResultaten = 900 + "+";
-    // }
-
-    return aantalZoekResultaten;
-  };
-
-  let aantalZoekResultaten = getZoekResultatenAantal();
+  // let aantalZoekResultaten = getZoekResultatenAantal();
 
   let gearIcon;
 
@@ -432,7 +383,7 @@ const App: React.FC<Props> = props => {
           />
         </div>
         <div className="resultsContainer">
-          <ResultsBar loading={state.isFetching} onBack={onBack} numberSearchResults={state.searchResults.length} />
+          <ResultsBar loading={state.isFetching} onBack={state.searchQuery || state.searchResults.length ?onBack: undefined} numberSearchResults={state.searchResults.length} />
           <div className="loaderDiv">
             <Loader loading={state.isFetching} />
           </div>
@@ -442,11 +393,12 @@ const App: React.FC<Props> = props => {
               <Results
                 results={state.searchResults}
                 onClickItem={onClickItem}
-                onMouseEnterItem={() => {
-                  console.log("on mouse enter");
+                onMouseEnterItem={(item) => {
+                  
+                  LeafletUtils.findMarkerByUrl(item.url)?.fire("mouseover")
                 }}
-                onMouseLeaveItem={() => {
-                  console.log("on mouse leave");
+                onMouseLeaveItem={(item) => {
+                  LeafletUtils.findMarkerByUrl(item.url)?.fire("mouseout")
                 }}
               />
             )}
@@ -486,53 +438,62 @@ const App: React.FC<Props> = props => {
 };
 
 /**
- * Initeert de kaart.
- **/
+ * Defined outside the functional component, as we want to debounce this
+ * (otherwise, we'd create a new debounced function for every rerender)
+ */
+const doSearch = _.debounce((text: string, dispatch:React.Dispatch<Reducer.Action> ) => {
+  /**
+   * Roep de getMatch functie aan van de communicator
+   **/
+  dispatch({ type: "search_start", value: text });
 
-const getCenterGeoJson = (geojson: any): L.LatLng => {
-  //kijk eerst naar de center
-  let centroid = turf.center(geojson);
 
-  //maak er een geojson en feature van.
-  let geoJsonFeature = geojson.geometry ? geojson : { type: "Feature", geometry: geojson };
-  geojson = geojson.geometry ? geojson.geometry : geojson;
+  search(text, () => {
+    dispatch({ type: "clustering" });
+  })
+    .then(res => {
+      if (res !== undefined) {
+        //It's undefined when a new search operation was started in the meantime
+        //(e.g., when typing)
+        dispatch({ type: "search_success", value: text,results: res.results });
+      }
+    })
+    .catch((e) => {
+      console.error(e)
+      dispatch({ type: "search_error",value: text });
+    });
 
-  //Multipolygon werkt niet met turf.booleanContains.
-  if (geojson.type !== "MultiPolygon") {
-    //als deze niet in het geojson object ligt, gebruik dan de centroid
-    if (!turf.booleanContains(geoJsonFeature, centroid)) {
-      centroid = turf.centroid(geoJsonFeature);
-    }
+  // Promise.resolve().then((res: string) =>{
+  //   if (res === "waiting") {
+  //     dispatch({type:'clustering', value: text})
+  //   }
+  // })
+  // Communicator.getMatch(text.trim(), this.state.currentSelected, this.setResFromOutside).then(res => {
+  //     //als je een error terug krijgt, dan betekent dat je wel een antwoord hebt maar dat het niet werkt.
+  //
+  //     //als er waiting terug komt wacht dan.
+  //     if(res === "waiting"){
+  //         this.setState({
+  //             updateIng : true,
+  //             isFetching: false
+  //         })
+  //         //anders laat niets zien.
+  //     }else if (res === "error") {
+  //         this.setState({
+  //             isFetching: false
+  //         })
+  //
+  //         //als je undefined terug krijgt betekent het dat het een oude search query is.
+  //         //Dus als het niet undefined is, betekent dat het het huidige search query is.
+  //     } else if (res !== undefined) {
+  //
+  //         this.setState({
+  //             isFetching: false
+  //         });
+  //         this.state.results.setResults(res);
+  //     }
+  // });
+}, 500);
 
-    //anders gebruik point on feature
-    if (!turf.booleanContains(geojson, centroid)) {
-      centroid = turf.pointOnFeature(geojson);
-    }
-  } else {
-    //gebruik inside voor multipolygon om te controlleren.
-    let lon = centroid.geometry.coordinates[0];
-    let lat = centroid.geometry.coordinates[1];
-    let col = { type: "FeatureCollection", features: [geoJsonFeature] };
-    let isInside = inside.feature(col, [lon, lat]) !== -1;
 
-    if (!isInside) {
-      centroid = turf.centroid(geojson);
-    }
-
-    lon = centroid.geometry.coordinates[0];
-    lat = centroid.geometry.coordinates[1];
-    col = { type: "FeatureCollection", features: [geoJsonFeature] };
-    isInside = inside.feature(col, [lon, lat]) !== -1;
-
-    if (!isInside) {
-      centroid = turf.pointOnFeature(geojson);
-    }
-  }
-
-  //krijg de lat en long
-  let lon = centroid.geometry.coordinates[0];
-  let lat = centroid.geometry.coordinates[1];
-
-  return L.latLng(lat, lon);
-};
 export default App;

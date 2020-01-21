@@ -8,7 +8,7 @@ export interface Props {
   onMouseLeaveItem: (item:BrtObject|BrtCluster) => void
 }
 const Results:React.FC<Props> = (props) => {
-        let results;
+        // let results;
 
         // //kijk eerst of er een cluster is of niet.
         // if(props.res.getClickedCluster()){
@@ -36,7 +36,6 @@ const Results:React.FC<Props> = (props) => {
                 pElementSub = (<p className= "subText" style={color}>
                     {res.type ? res.type : String.fromCharCode(32)}</p>);
             }
-
             return (<li key={res.url + res.name}
                         className="liResultScreen"
                         onClick={() => {props.onClickItem(res)}}
@@ -50,7 +49,7 @@ const Results:React.FC<Props> = (props) => {
         return(
             <div className="homeScreen">
                 <ul>
-                    {elements}
+                    {elements.length?elements:undefined}
                 </ul>
             </div>
         )
