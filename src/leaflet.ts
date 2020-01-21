@@ -32,11 +32,10 @@ let popup: L.Popup;
 export type FeatureProperties = Reducer.BrtCluster | Reducer.BrtObject;
 export type BrtFeature = GeoJson.Feature<GeoJson.Geometry, FeatureProperties>;
 
-
 export function init(opts: {
   onContextSearch: (context: Reducer.ContextQuery) => void;
   onZoomChange: (zoomLevel: number) => void;
-  onClick: (el: Reducer.BrtObject | Reducer.BrtCluster) => void
+  onClick: (el: Reducer.BrtObject | Reducer.BrtCluster) => void;
 }) {
   //opties van de kaart
   map = L.map("map", {
@@ -66,7 +65,6 @@ export function init(opts: {
     map.closePopup();
     popup = undefined;
 
-
     let bounds = map.getBounds();
     opts.onContextSearch({
       lat: latLong.lat,
@@ -81,244 +79,238 @@ export function init(opts: {
   //disable the zoom
   map.doubleClickZoom.disable();
 
+  /**
+   * De functie die de kaart aanroept elke keer als deze een marker wilt toevoegen.
+   **/
+  const addMarker = (feature: GeoJson.Feature, latlng: L.LatLng): void => {
+    //maak een marker aan
+    let marker = L.marker(latlng);
 
+    marker.feature = {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [latlng.lat, latlng.lng] },
+      properties: feature.properties
+    };
+    markerGroup.addLayer(marker);
 
-
-    /**
-     * De functie die de kaart aanroept elke keer als deze een marker wilt toevoegen.
-     **/
-    const addMarker = (feature: GeoJson.Feature, latlng: L.LatLng):void => {
-      //maak een marker aan
-      let marker = L.marker(latlng);
-
-       marker.feature = {
-         type: "Feature",
-         geometry: { type: "Point", coordinates: [latlng.lat, latlng.lng] },
-         properties: feature.properties
-       };
-      markerGroup.addLayer(marker);
-
-      //dit is de pop up en de html die tevoorschijn komt.
-      marker.bindPopup(
-        `<div class = "marker">
+    //dit is de pop up en de html die tevoorschijn komt.
+    marker.bindPopup(
+      `<div class = "marker">
                           <b>${feature.properties.name} </b>
                           <br/>
-                          <span class = "subTextMarker" style="color:${getHexFromColor(feature.properties.color, true)};">${
-          feature.properties.type
-        }</span><div>
+                          <span class = "subTextMarker" style="color:${getHexFromColor(
+                            feature.properties.color,
+                            true
+                          )};">${feature.properties.type}</span><div>
                   `,
-        {
-          autoPan: false,
-          closeButton: false
-        }
-      );
+      {
+        autoPan: false,
+        closeButton: false
+      }
+    );
 
-      //methode die worden aangeroepen om de marker te openen
-      let onHover = function(this: L.Marker) {
-        this.openPopup();
-        this.setIcon(Icons);
-      }.bind(marker);
+    //methode die worden aangeroepen om de marker te openen
+    let onHover = function(this: L.Marker) {
+      this.openPopup();
+      this.setIcon(Icons);
+    }.bind(marker);
 
-      //methode die wordt aangeroepen om de marker te sluiten
-      let onHoverOff = function(this: L.Marker) {
-        this.closePopup();
-        this.setIcon(DefaultIcon);
-      }.bind(marker);
+    //methode die wordt aangeroepen om de marker te sluiten
+    let onHoverOff = function(this: L.Marker) {
+      this.closePopup();
+      this.setIcon(DefaultIcon);
+    }.bind(marker);
 
-      //wanneer je over de marker gaat laat de pop up zien
-      marker.on("mouseover", onHover);
-      // //geef deze ook aan de feature zodat wanneer je over de resultaten lijst gaat het ook op de kaart te zien is.
-      // feature.properties.onHover = onHover;
+    //wanneer je over de marker gaat laat de pop up zien
+    marker.on("mouseover", onHover);
+    // //geef deze ook aan de feature zodat wanneer je over de resultaten lijst gaat het ook op de kaart te zien is.
+    // feature.properties.onHover = onHover;
 
-      //wanneer je er van af gaat laat het weg
-      marker.on("mouseout", onHoverOff);
-      // feature.properties.onHoverOff = onHoverOff;
+    //wanneer je er van af gaat laat het weg
+    marker.on("mouseout", onHoverOff);
+    // feature.properties.onHoverOff = onHoverOff;
 
-      //wanneer je er op klikt ga naar die marker
-      marker.on("click", () => {
-        opts.onClick(feature.properties as any);
-      });
+    //wanneer je er op klikt ga naar die marker
+    marker.on("click", () => {
+      opts.onClick(feature.properties as any);
+    });
+  };
+
+  const addMarkerForNonPoint = (feature: BrtFeature, latlng: L.LatLng) => {
+    //maak een marker aan
+    let marker = L.marker(latlng);
+    marker.feature = {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [latlng.lat, latlng.lng] },
+      properties: feature.properties
     };
-
-
-    const addMarkerForNonPoint = (feature: BrtFeature, latlng: L.LatLng) => {
-      //maak een marker aan
-      let marker = L.marker(latlng);
-      marker.feature = {
-        type: "Feature",
-        geometry: { type: "Point", coordinates: [latlng.lat, latlng.lng] },
-        properties: feature.properties
-      };
-      //dit is de pop up en de html die tevoorschijn komt.
-      marker.bindPopup(
-        `<div class = "marker">
+    //dit is de pop up en de html die tevoorschijn komt.
+    marker.bindPopup(
+      `<div class = "marker">
                       <b>${feature.properties.name}</b>
                       <br/>
                       <span class = "subTextMarker" style="color:${getHexFromColor(feature.properties.color, true)};">${
-          feature.properties.type
-        }</span><div>
+        feature.properties.type
+      }</span><div>
               `,
-        {
+      {
+        autoPan: false,
+        closeButton: false
+      }
+    );
+
+    //methode die worden aangeroepen om de marker te openen
+    let onHover = function(this: L.Marker) {
+      this.openPopup();
+      this.setIcon(Icons);
+    }.bind(marker);
+
+    //methode die wordt aangeroepen om de marker te sluiten
+    let onHoverOff = function(this: L.Marker) {
+      this.closePopup();
+      this.setIcon(DefaultIcon);
+    }.bind(marker);
+
+    //wanneer je over de marker gaat laat de pop up zien
+    marker.on("mouseover", onHover);
+
+    //wanneer je er van af gaat laat het weg
+    marker.on("mouseout", onHoverOff);
+    // feature.properties._setOnHoverOff(onHoverOff);
+
+    //wanneer je er op klikt ga naar die marker
+    marker.on("click", () => {
+      opts.onClick(feature.properties);
+    });
+
+    return marker;
+  };
+  /**
+   * Wordt aangeroepen elke keer als er een geojson object wordt getekend.
+   **/
+  const handleGeoJsonLayerDrawing = (
+    feature: GeoJson.Feature<GeoJson.Geometry, Reducer.BrtCluster | Reducer.BrtCluster>,
+    layer: L.Layer
+  ) => {
+    if (feature.geometry.type === "Point") return;
+
+    //vindt eerst de center
+    let latLong = getCenterGeoJson(feature);
+
+    //op deze center voeg een marker toe
+    markerGroup.addLayer(addMarkerForNonPoint(feature, latLong));
+
+    //laat de pop up zien als je erover gaat
+    layer.on("mouseover", e => {
+      //krijg eerst alle geojson objecten die dit punt bevatten.
+      let contains = getAllGeoJsonObjectContainingPoint((e as any).latlng.lng, (e as any).latlng.lat);
+      //hierna maak de popup content aan met html
+      let content = contains
+        .map((res: any) => {
+          return `<b>${res.properties.name}</b><br/>
+                        <span class="subTextMarker" style="color:${getHexFromColor(res.properties.color, true)};" >${
+            res.properties.type
+          } </span>`;
+        })
+        .reverse()
+        .join(`<br/>`);
+
+      content = `<div class="popUpMouseOver">${content}<div>`;
+
+      //als er geen dingen zijn die dit punt bevatten sluit dan de popup
+      if (contains.length < 1) {
+        map.closePopup();
+        popup = undefined;
+      } else if (!popup) {
+        //als er nog geen popup open is open dan deze.
+        popup = L.popup({
           autoPan: false,
           closeButton: false
-        }
-      );
+        })
+          .setLatLng((e as any).latlng)
+          .setContent(content)
+          .openOn(map);
+      }
+    });
 
-      //methode die worden aangeroepen om de marker te openen
-      let onHover = function(this: L.Marker) {
-        this.openPopup();
-        this.setIcon(Icons);
-      }.bind(marker);
+    //dit is de functie die wordt aangeroepen als je over een object heen gaat met je muis.
+    let mouseOverFunction: L.LeafletEventHandlerFn = e => {
+      let contains = getAllGeoJsonObjectContainingPoint((e as any).latlng.lng, (e as any).latlng.lat);
 
-      //methode die wordt aangeroepen om de marker te sluiten
-      let onHoverOff = function(this: L.Marker) {
-        this.closePopup();
-        this.setIcon(DefaultIcon);
-      }.bind(marker);
-
-      //wanneer je over de marker gaat laat de pop up zien
-      marker.on("mouseover", onHover);
-
-      //wanneer je er van af gaat laat het weg
-      marker.on("mouseout", onHoverOff);
-      // feature.properties._setOnHoverOff(onHoverOff);
-
-      //wanneer je er op klikt ga naar die marker
-      marker.on("click", () => {
-        opts.onClick(feature.properties);
-      });
-
-      return marker;
-    };
-    /**
-     * Wordt aangeroepen elke keer als er een geojson object wordt getekend.
-     **/
-    const handleGeoJsonLayerDrawing = (
-      feature: GeoJson.Feature<GeoJson.Geometry, Reducer.BrtCluster | Reducer.BrtCluster>,
-      layer: L.Layer
-    ) => {
-
-      if (feature.geometry.type === "Point") return
-
-      //vindt eerst de center
-      let latLong = getCenterGeoJson(feature);
-
-      //op deze center voeg een marker toe
-      markerGroup.addLayer(addMarkerForNonPoint(feature, latLong));
-
-      //laat de pop up zien als je erover gaat
-      layer.on("mouseover", e => {
-        //krijg eerst alle geojson objecten die dit punt bevatten.
-        let contains = getAllGeoJsonObjectContainingPoint((e as any).latlng.lng, (e as any).latlng.lat);
-        //hierna maak de popup content aan met html
-        let content = contains
-          .map((res: any) => {
-            return `<b>${res.properties.name}</b><br/>
+      let content = contains
+        .map(res => {
+          return `<b>${res.properties.name}</b><br/>
                         <span class="subTextMarker" style="color:${getHexFromColor(res.properties.color, true)};" >${
-              res.properties.type
-            } </span>`;
-          })
-          .reverse()
-          .join(`<br/>`);
+            res.properties.type
+          } </span>`;
+        })
+        .reverse()
+        .join(`<br/>`);
+
+      if (contains.length < 1) {
+        map.closePopup();
+        popup = undefined;
+      } else if (popup) {
+        popup.setLatLng((e as any).latlng);
 
         content = `<div class="popUpMouseOver">${content}<div>`;
 
-        //als er geen dingen zijn die dit punt bevatten sluit dan de popup
-        if (contains.length < 1) {
-          map.closePopup();
-          popup = undefined;
-        } else if (!popup) {
-          //als er nog geen popup open is open dan deze.
-          popup = L.popup({
-            autoPan: false,
-            closeButton: false
-          })
-            .setLatLng((e as any).latlng)
-            .setContent(content)
-            .openOn(map);
+        if (content !== popup.getContent()) {
+          popup.setContent(content);
         }
-      });
-
-      //dit is de functie die wordt aangeroepen als je over een object heen gaat met je muis.
-      let mouseOverFunction: L.LeafletEventHandlerFn = e => {
-        let contains = getAllGeoJsonObjectContainingPoint((e as any).latlng.lng, (e as any).latlng.lat);
-
-        let content = contains
-          .map(res => {
-            return `<b>${res.properties.name}</b><br/>
-                        <span class="subTextMarker" style="color:${getHexFromColor(res.properties.color, true)};" >${
-              res.properties.type
-            } </span>`;
-          })
-          .reverse()
-          .join(`<br/>`);
-
-        if (contains.length < 1) {
-          map.closePopup();
-          popup = undefined;
-        } else if (popup) {
-          popup.setLatLng((e as any).latlng);
-
-          content = `<div class="popUpMouseOver">${content}<div>`;
-
-          if (content !== popup.getContent()) {
-            popup.setContent(content);
-          }
-        } else {
-          popup = L.popup({
-            autoPan: false,
-            closeButton: false
-          })
-            .setLatLng((e as any).latlng)
-            .setContent(content)
-            .openOn(map);
-        }
-      };
-
-      //Je kan ervoor kiezen om deze functionalitiet te throttelen.
-      layer.on("mousemove", _.throttle(mouseOverFunction, 10));
-
-      //sluit de pop up als je er van af gaat
-      layer.on("mouseout", () => {
-        map.closePopup();
-        popup = undefined;
-      });
-
-      //als je er op klikt ga er dan naartoe
-      layer.on("click", (e: any) => {
-        //check of er meerdere lagen zijn
-        let contains = getAllGeoJsonObjectContainingPoint(e.latlng.lng, e.latlng.lat);
-
-        //als er maar één laag is
-        if (contains.length < 2) {
-          opts.onClick(feature.properties as any);
-        } else {
-          //agrageer de opties en geef deze aan het context menu
-          let options = contains.reverse().map(res => {
-            let func = () => {
-              opts.onClick(res.properties);
-            };
-
-            return {
-              head: res.properties.name,
-              sub: res.properties.type,
-              subColor: res.properties.color,
-              onClick: func
-            };
-          });
-
-          // this.setState({
-          //     clickedOnLayeredMap: {x: e.originalEvent.pageX, y: e.originalEvent.pageY},
-          //     objectsOverLayedOnMap: options
-          // });
-        }
-      });
-      // }
+      } else {
+        popup = L.popup({
+          autoPan: false,
+          closeButton: false
+        })
+          .setLatLng((e as any).latlng)
+          .setContent(content)
+          .openOn(map);
+      }
     };
 
+    //Je kan ervoor kiezen om deze functionalitiet te throttelen.
+    layer.on("mousemove", _.throttle(mouseOverFunction, 10));
+
+    //sluit de pop up als je er van af gaat
+    layer.on("mouseout", () => {
+      map.closePopup();
+      popup = undefined;
+    });
+
+    //als je er op klikt ga er dan naartoe
+    layer.on("click", (e: any) => {
+      //check of er meerdere lagen zijn
+      let contains = getAllGeoJsonObjectContainingPoint(e.latlng.lng, e.latlng.lat);
+
+      //als er maar één laag is
+      if (contains.length < 2) {
+        opts.onClick(feature.properties as any);
+      } else {
+        //agrageer de opties en geef deze aan het context menu
+        let options = contains.reverse().map(res => {
+          let func = () => {
+            opts.onClick(res.properties);
+          };
+
+          return {
+            head: res.properties.name,
+            sub: res.properties.type,
+            subColor: res.properties.color,
+            onClick: func
+          };
+        });
+
+        // this.setState({
+        //     clickedOnLayeredMap: {x: e.originalEvent.pageX, y: e.originalEvent.pageY},
+        //     objectsOverLayedOnMap: options
+        // });
+      }
+    });
+    // }
+  };
 
   geoJsonLayer = L.geoJSON([] as any, {
-
     onEachFeature: handleGeoJsonLayerDrawing,
     pointToLayer: addMarker as any,
     style: getStyle as any
@@ -339,7 +331,6 @@ export function init(opts: {
   map.on("zoomend" as any, () => {
     opts.onZoomChange(map.getZoom());
   });
-
 }
 
 export function closePopup() {
@@ -350,9 +341,9 @@ export function centerMap() {
   map.setView([52.20936, 5.2], 8);
 }
 export function updateMap(opts: {
-  selectedObject?:  Reducer.BrtObject;
+  selectedObject?: Reducer.BrtObject;
   searchResults?: Reducer.State["searchResults"];
-  updateZoom:boolean
+  updateZoom: boolean;
 }) {
   map.closePopup();
   popup = undefined;
@@ -361,10 +352,12 @@ export function updateMap(opts: {
   // als er een geklikt resultaat is, render dan alleen deze
   if (opts.selectedObject) {
     geoJsonLayer.addData(objectOrClusterToGeojson(opts.selectedObject));
-    if (opts.updateZoom) map.fitBounds(L.featureGroup([geoJsonLayer, markerGroup]).getBounds(), {maxZoom:10});
+    map.fitBounds(L.featureGroup([geoJsonLayer, markerGroup]).getBounds(), { maxZoom: 10 });
   } else if (opts.searchResults.length) {
     geoJsonLayer.addData(getAllObjectsOrClustersAsFeature(opts.searchResults) as any);
-    if (opts.updateZoom) map.fitBounds(L.featureGroup([geoJsonLayer, markerGroup]).getBounds(), {maxZoom:10});
+    map.fitBounds(L.featureGroup([geoJsonLayer, markerGroup]).getBounds(), { maxZoom: 10 });
+  } else if (opts.updateZoom) {
+    centerMap();
   }
 }
 
@@ -382,7 +375,6 @@ export function toggleClustering(toggle: boolean) {
     markerGroup = L.featureGroup().addTo(map);
   }
 }
-
 
 const getAllFeaturesFromLeaflet = () => {
   return geoJsonLayer.getLayers().map((l: any) => l.feature) as BrtFeature[];
@@ -405,7 +397,6 @@ const getAllGeoJsonObjectContainingPoint = (lng: number, lat: number) => {
     //filter, als er -1 uitkomt bevindt het punt zich niet in de polygoon.
     return inside.feature(col, [lng, lat]) !== -1;
   });
-
 };
 
 /**
@@ -419,9 +410,6 @@ const getStyle = (feature: { properties: Reducer.BrtObject | Reducer.BrtCluster 
     };
   }
 };
-
-
-
 
 const getCenterGeoJson = (geojson: any): L.LatLng => {
   let centroid = turf.center(geojson);

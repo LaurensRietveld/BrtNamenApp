@@ -1,9 +1,9 @@
 // import Resultaat from "../../model/Resultaat";
 
 import * as utils from "./utils";
-import {queryTriply, queryResourcesDescriptions} from './sparql'
+import { queryTriply, queryResourcesDescriptions } from "./sparql";
 
-import {BrtObject,ContextQuery} from '../reducer'
+import { BrtObject, ContextQuery } from "../reducer";
 /**
  * Haalt dingen op aan de hand van de gegeven coordinaten.
  *
@@ -16,37 +16,36 @@ import {BrtObject,ContextQuery} from '../reducer'
  * @param setResFromOutside met deze methode kan je de resultaten van buiten de app zetten. Je moet wel "waiting" als string
  * terug geven.
  */
- export async function getFromCoordinates(ctx:ContextQuery, onStartClustering: () => void) {
-    let {lat,lng,north,east,south,west} = ctx;
-    //check of de gebruiker te ver is uitgezoomd. Zet dan je eigen coordinaten.
-    if (west - east > 0.05 || north - south > 0.0300) {
-        east = lng - 0.025;
-        west = lng + 0.025;
-        north = lat + 0.01500;
-        south = lat - 0.01500;
-    }
+export async function getFromCoordinates(ctx: ContextQuery, onStartClustering: () => void) {
+  let { lat, lng, north, east, south, west } = ctx;
+  //check of de gebruiker te ver is uitgezoomd. Zet dan je eigen coordinaten.
+  if (west - east > 0.05 || north - south > 0.03) {
+    east = lng - 0.025;
+    west = lng + 0.025;
+    north = lat + 0.015;
+    south = lat - 0.015;
+  }
 
-    //haal alle niet straten op.
-    const nonstreets = await queryTriply(queryForCoordinatesNonStreets(north, east, south, west));
+  //haal alle niet straten op.
+  const nonstreets = await queryTriply(queryForCoordinatesNonStreets(north, east, south, west));
 
-    //Zet deze om in een array met Resultaat.js
-    const nonstreetsResults = await queryResourcesDescriptions(nonstreets.results.bindings.map(b => b.sub.value));
+  //Zet deze om in een array met Resultaat.js
+  const nonstreetsResults = await queryResourcesDescriptions(nonstreets.results.bindings.map(b => b.sub.value));
 
-    //De straten worden in een kleinere straal opgehaald dus doe hier de berekeningen.
-    let stop = lat - 0.0022804940130103546;//((top - bottom) / 2) * factor;
-    let sbottom = lat + 0.0022804940130103546;//((top - bottom) / 2) * factor;
-    let sright = lng + 0.0033634901046750002;//((right - left) / 2) * factor;
-    let sleft = lng - 0.0033634901046750002;//((right - left) / 2) * factor;
+  //De straten worden in een kleinere straal opgehaald dus doe hier de berekeningen.
+  let stop = lat - 0.0022804940130103546; //((top - bottom) / 2) * factor;
+  let sbottom = lat + 0.0022804940130103546; //((top - bottom) / 2) * factor;
+  let sright = lng + 0.0033634901046750002; //((right - left) / 2) * factor;
+  let sleft = lng - 0.0033634901046750002; //((right - left) / 2) * factor;
 
-    const streets = await queryTriply(queryForCoordinatesStreets(stop, sleft, sbottom, sright));
+  const streets = await queryTriply(queryForCoordinatesStreets(stop, sleft, sbottom, sright));
 
+  //Zet deze om in een array met Resultaat.js
+  const streetsResults = await queryResourcesDescriptions(streets.results.bindings.map(b => b.sub.value));
 
-    //Zet deze om in een array met Resultaat.js
-    const streetsResults = await queryResourcesDescriptions(streets.results.bindings.map(b => b.sub.value));
-
-    onStartClustering();
-    //voeg de resultaten samen en cluster de waterlopen en straten.
-    return utils.clusterObjects( mergeResults(streetsResults, nonstreetsResults), undefined);
+  onStartClustering();
+  //voeg de resultaten samen en cluster de waterlopen en straten.
+  return utils.clusterObjects(mergeResults(streetsResults, nonstreetsResults), undefined);
 }
 
 /**
@@ -55,24 +54,21 @@ import {BrtObject,ContextQuery} from '../reducer'
  * @param regex
 
  */
-function mergeResults<E extends BrtObject>(exact:E[], regex:E[]):E[] {
-    exact.forEach(resexact => {
-            regex = regex.filter(resregex => {
-                return resexact.url !== resregex.url;
-            });
-        }
-    );
+function mergeResults<E extends BrtObject>(exact: E[], regex: E[]): E[] {
+  exact.forEach(resexact => {
+    regex = regex.filter(resregex => {
+      return resexact.url !== resregex.url;
+    });
+  });
 
-    return exact.concat(regex);
+  return exact.concat(regex);
 }
-
-
 
 /**
  * Query die aan de hand van coordinaten niet straten ophaalt.
  */
-function queryForCoordinatesNonStreets(top:number, left:number, bottom:number, right:number) {
-    return `PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+function queryForCoordinatesNonStreets(top: number, left: number, bottom: number, right: number) {
+  return `PREFIX geo: <http://www.opengis.net/ont/geosparql#>
             PREFIX brt: <http://brt.basisregistraties.overheid.nl/def/top10nl#>
 
             select distinct ?sub{
@@ -96,7 +92,7 @@ function queryForCoordinatesNonStreets(top:number, left:number, bottom:number, r
                 }
             }
             limit 300
-            `
+            `;
 }
 
 /**
@@ -106,8 +102,8 @@ function queryForCoordinatesNonStreets(top:number, left:number, bottom:number, r
  * @param bottom
  * @param right
  */
-function queryForCoordinatesStreets(top:number, left:number, bottom:number, right:number) {
-    return `PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+function queryForCoordinatesStreets(top: number, left: number, bottom: number, right: number) {
+  return `PREFIX geo: <http://www.opengis.net/ont/geosparql#>
             PREFIX brt: <http://brt.basisregistraties.overheid.nl/def/top10nl#>
 
             select distinct ?sub{
@@ -133,5 +129,5 @@ function queryForCoordinatesStreets(top:number, left:number, bottom:number, righ
 
             }
             limit 150
-            `
+            `;
 }

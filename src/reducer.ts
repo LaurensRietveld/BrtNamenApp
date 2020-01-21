@@ -29,7 +29,7 @@ export type Action =
   | { type: "search_start"; value: string }
   | { type: "search_success"; value: string; results: State["searchResults"] }
   | { type: "search_error"; value: string }
-  | { type: "context_search_start", value: ContextQuery }
+  | { type: "context_search_start"; value: ContextQuery }
   | { type: "context_search_success"; results: State["searchResults"] }
   | { type: "context_search_error" }
   | { type: "clustering" }
@@ -37,10 +37,8 @@ export type Action =
   | { type: "zoomChange"; value: number }
   | { type: "selectCluster"; value: BrtCluster }
   | { type: "selectObject"; value: BrtObject }
-  | { type: "resetSelectedCluster"; }
-  | { type: "resetSelectedObject";  }
-  // | { type: "clustering_success"; results: State["searchResults"] }
-  // | { type: "clustering_error" }
+  | { type: "resetSelectedCluster" }
+  | { type: "resetSelectedObject" }
   | { type: "reset" };
 
 //Single element
@@ -90,8 +88,8 @@ export const reducer: React.Reducer<State, Action> = immer.produce((state: State
     case "search_error":
       state.isFetching = false;
       state.isClustering = false;
-    return state;
-      case "search_success":
+      return state;
+    case "search_success":
       state.isFetching = false;
       state.isClustering = false;
       state.searchResults = action.results;
@@ -101,10 +99,10 @@ export const reducer: React.Reducer<State, Action> = immer.produce((state: State
       state.isFetching = true;
       state.isClustering = false;
       state.searchQuery = ""; //context search, so want search query empty
-      state.contextQuery = action.value
-      state.searchResults = []
+      state.contextQuery = action.value;
+      state.searchResults = [];
       state.selectedObject = null;
-      state.selectedCluster = null
+      state.selectedCluster = null;
       return state;
     case "context_search_error":
       state.isFetching = false;
@@ -134,8 +132,8 @@ export const reducer: React.Reducer<State, Action> = immer.produce((state: State
       return state;
     case "zoomChange":
       state.zoomLevel = action.value;
-      if (state.zoomLevel < 10 && !state.mapClustered) state.mapClustered = true
-      if (state.zoomLevel >= 10 && state.mapClustered) state.mapClustered = false
+      if (state.zoomLevel < 10 && !state.mapClustered) state.mapClustered = true;
+      if (state.zoomLevel >= 10 && state.mapClustered) state.mapClustered = false;
       return state;
     default:
       return state;

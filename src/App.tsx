@@ -127,16 +127,10 @@ const App: React.FC = () => {
     LeafletUtils.centerMap();
   };
 
-  /**
-   * Wanneer er op het kruisje in de search bar wordt geklikt.
-   **/
-  const handleDeleteClick = () => {
-    onSearchChange({}, { value: "" });
+  const handleSearchTextDeleteClick = () => {
+    dispatch({ type: "reset" });
   };
 
-  // /**
-  //  * Wanneer er op de terug knop wordt geklikt in de applicatie aka <-- terug.
-  //  **/
   const onBack = () => {
     if (state.selectedObject) {
       dispatch({ type: "resetSelectedObject" });
@@ -146,13 +140,13 @@ const App: React.FC = () => {
       dispatch({ type: "reset" });
     }
   };
-  let numResults:number;
-  if (state.selectedObject) {
-    //no result count to show, it's just 1 object
-  }else if (state.selectedCluster) {
-    numResults = state.selectedCluster.values.length
-  } else if (state.searchQuery || state.contextQuery ){
-    numResults = state.searchResults.length
+  let numResults: number;
+  if (state.selectedObject || state.isFetching) {
+    //no result count to show
+  } else if (state.selectedCluster) {
+    numResults = state.selectedCluster.values.length;
+  } else if (state.searchQuery || state.contextQuery) {
+    numResults = state.searchResults.length;
   }
   return (
     <section className="App">
@@ -174,7 +168,7 @@ const App: React.FC = () => {
             noResultsMessage="Geen resultaat"
             icon={
               state.searchQuery || state.contextQuery ? (
-                <Icon name="delete" link onClick={handleDeleteClick} />
+                <Icon name="delete" link onClick={handleSearchTextDeleteClick} />
               ) : (
                 <Icon name="search" />
               )
@@ -184,11 +178,9 @@ const App: React.FC = () => {
           />
         </div>
         <div className="resultsContainer">
-          <ResultsBar
-            loading={state.isFetching}
-            onBack={state.searchQuery || state.searchResults.length ? onBack : undefined}
-            numberSearchResults={numResults}
-          />
+          {!!(state.searchQuery || state.searchResults.length) && (
+            <ResultsBar loading={state.isFetching} onBack={onBack} numberSearchResults={numResults} />
+          )}
           <div className="loaderDiv">
             <Loader loading={state.isFetching} />
           </div>
