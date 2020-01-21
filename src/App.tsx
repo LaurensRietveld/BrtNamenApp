@@ -27,7 +27,7 @@ import ResultsBar from "./components/ResultsBar";
  * Assets
  */
 // import './App.css';
-// import KadasterImg from './assets/Logo-kadaster.png';
+import KadasterImg from "./assets/Logo-kadaster.png";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
@@ -151,16 +151,12 @@ const App: React.FC = () => {
   return (
     <section className="App">
       <div className="brtInfo">
-        {
-          // <Link
-          //   to="/"
-          //   onClick={() => {
-          //     handleDeleteClick();
-          //   }}
-          // >
-          //   <div className="header"></div>
-          // </Link>
-        }
+        <div onClick={() => dispatch({ type: "reset" })}>
+          <div className="header">
+            <h1>Topo Namenzoeker</h1>
+            <img src={KadasterImg} alt="kadaster logo" />
+          </div>
+        </div>
         <div className="searchBar">
           <Search
             input={{ fluid: true }}
