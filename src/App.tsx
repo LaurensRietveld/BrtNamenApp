@@ -4,7 +4,7 @@
 import * as LeafletUtils from "./leaflet";
 import React from "react";
 import _ from "lodash";
-import {  ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./styles.scss";
 import * as Reducer from "./reducer";
@@ -15,11 +15,12 @@ import { search } from "./helpers/searchByText";
  * UI
  */
 // import Routes from './routes/Routes'
-import {  Icon, Search } from "semantic-ui-react";
+import { Icon, Search } from "semantic-ui-react";
 // import NavBar from "./components/NavBar";
 import Loader from "./components/Loader";
 import StartMessage from "./components/StartMessage";
 import Results from "./components/Results";
+import Result from "./components/Result";
 import ResultsBar from "./components/ResultsBar";
 
 /**
@@ -43,11 +44,12 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 // import { DefaultIcon, Icons } from "./components/Icons";
 // import ContextMenu from "./components/ContextMenu";
 // import ClusterObject from "./model/ClusterObject";
-
-
-
+let _debug:any = (window as any)._debug || {};
+(window as any)._debug = _debug;
 const App: React.FC = () => {
   const [state, dispatch] = React.useReducer(Reducer.reducer, Reducer.initialState);
+  _debug.state = state;
+  _debug.dispatch = dispatch
   //Set state in window for debugging
   React.useEffect(() => {
     LeafletUtils.init({
@@ -58,6 +60,12 @@ const App: React.FC = () => {
         dispatch({ type: "context_search_start", value: ctx });
       }
     });
+    //Just for debugging
+    setTimeout(() => {
+      const text = "Bussum";
+      dispatch({ type: "typeSearch", value: text });
+      doSearch(text, dispatch);
+    }, 200);
     return () => {};
   }, []);
   React.useEffect(() => {
@@ -102,9 +110,11 @@ const App: React.FC = () => {
   const onClickItem = (res: Reducer.BrtObject | Reducer.BrtCluster) => {
     //als het een cluster object is, laat dan dit clusterobject zien.
     if ("values" in res) {
+      dispatch({ type: "selectCluster", value: res });
       // this.state.results.setClickedCluster(res);
       // props.history.push(`/result/${res.getNaam()}`);
     } else {
+      dispatch({ type: "selectObject", value: res });
       //maak een nieuwe clickedresultaat
       // let clickedRes = new ClickedResultaat(res);
       // this.setState({
@@ -131,61 +141,12 @@ const App: React.FC = () => {
     }
   };
 
-  /**
-   * Wanneer iemand op een resultaat klikt voer dan deze methode uit.
-   **/
-
-  /**
-   * Wordt aangeroepen wanneer er iets wordt getype
-   **/
   const onSearchChange = (_e: any, data: any) => {
     let text = data.value;
     LeafletUtils.closePopup();
 
-    //als de text iets heeft
-    if (text) {
-      dispatch({ type: "typeSearch", value: text });
-      doSearch(text, dispatch);
-
-      //zet dan eerst de state
-
-      // //haal vorige resultaten weg
-      // this.state.results.clearClickedResult();
-      // this.state.results.clearDoubleResults();
-      // this.state.results.clearClickedCluster();
-      //
-      // //debounce zodat het pas wordt uitgevoerd wanneer de gebuiker stopt met typen.
-      // if (!this.debounceDoSearch) {
-      //     this.debounceDoSearch = _.debounce(this.doSearch, 500);
-      // }
-
-      //roep de methode aan die de zoek functie aanroept
-      // this.debounceDoSearch(text);
-
-      //Als je op het hoofscherm bent ga dan naar de result screen
-      // if (props.location.pathname === "/") {
-      //   props.history.push("/result");
-      // }
-    } else {
-      //als de zoekbar text leeg is
-      // setSearchQuery("");
-      // setIsFetching(false);
-      //verwijder alle resultaten
-      // this.state.results.clearAll();
-      // let match2 = matchPath(props.location.pathname, {
-      //   path: "/result/:id/:idd",
-      //   exact: true,
-      //   strict: true
-      // });
-      //ga terug naar het hoofdscherm
-      // if (props.location.pathname === "/result") {
-      //   props.history.goBack();
-      // } else if (match2) {
-      //   props.history.go(-3);
-      // } else if (props.location.pathname !== "/") {
-      //   props.history.go(-2);
-      // }
-    }
+    dispatch({ type: "typeSearch", value: text });
+    doSearch(text, dispatch);
 
     //centreer de kaart weer.
     LeafletUtils.centerMap();
@@ -204,7 +165,13 @@ const App: React.FC = () => {
   //  * Wanneer er op de terug knop wordt geklikt in de applicatie aka <-- terug.
   //  **/
   const onBack = () => {
-    console.log("on back!");
+    if (state.selectedObject) {
+      dispatch({ type: "resetSelectedObject" });
+    } else if (state.selectedCluster) {
+      dispatch({ type: "resetSelectedCluster" });
+    } else {
+      dispatch({ type: "reset" });
+    }
   };
   // const handleOnBackButtonClick = () => {
   //   /**
@@ -344,14 +311,7 @@ const App: React.FC = () => {
   //     </Dropdown>);
   // }
 
-  let icon;
   let className;
-
-  // if (searchQuery || this.state.results.getRightClickedRes().length > 0) {
-  //     icon = <Icon name='delete' link onClick={handleDeleteClick}/>;
-  // } else {
-  icon = <Icon name="search" />;
-  // }
 
   if (!state.isClustering) {
     className = "mapHolder";
@@ -376,40 +336,29 @@ const App: React.FC = () => {
             input={{ fluid: true }}
             value={state.contextQuery ? "[ Kaartresultaten worden getoond ]" : state.searchQuery}
             noResultsMessage="Geen resultaat"
-            icon={icon}
+            icon={state.searchQuery ? <Icon name="delete" link onClick={handleDeleteClick} /> : <Icon name="search" />}
             onSearchChange={onSearchChange}
             open={false}
             onFocus={onFocus}
           />
         </div>
         <div className="resultsContainer">
-          <ResultsBar loading={state.isFetching} onBack={state.searchQuery || state.searchResults.length ?onBack: undefined} numberSearchResults={state.searchResults.length} />
+          <ResultsBar
+            loading={state.isFetching}
+            onBack={state.searchQuery || state.searchResults.length ? onBack : undefined}
+            numberSearchResults={state.searchResults.length}
+          />
           <div className="loaderDiv">
             <Loader loading={state.isFetching} />
           </div>
           <div className="resultPartContainer">
-            {!state.searchResults.length && !state.searchQuery && <StartMessage />}
-            {state.searchResults.length && (
-              <Results
-                results={state.searchResults}
-                onClickItem={onClickItem}
-                onMouseEnterItem={(item) => {
-                  
-                  LeafletUtils.findMarkerByUrl(item.url)?.fire("mouseover")
-                }}
-                onMouseLeaveItem={(item) => {
-                  LeafletUtils.findMarkerByUrl(item.url)?.fire("mouseout")
-                }}
-              />
-            )}
-            {
-              // <Routes
-              //     res={this.state.results}
-              //     clickedResult={this.state.results.getClickedResult()}
-              //     onClickItem={onClickItem}
-              //     getHexFromColor={getHexFromColor}
-              // />
-            }
+            <ResultsBody
+              searchQuery={state.searchQuery}
+              dispatch={dispatch}
+              searchResults={state.searchResults}
+              selectedObject={state.selectedObject}
+              selectedCluster={state.selectedCluster}
+            />
           </div>
         </div>
         <div className="footer">
@@ -437,63 +386,88 @@ const App: React.FC = () => {
   );
 };
 
+interface Props {
+  searchQuery: string;
+  searchResults: Reducer.State["searchResults"];
+  dispatch: React.Dispatch<Reducer.Action>;
+  selectedObject: Reducer.BrtObject;
+  selectedCluster: Reducer.BrtCluster;
+}
+const ResultsBody: React.FC<Props> = props => {
+  if (!props.searchResults.length && !props.searchQuery) {
+    return <StartMessage />;
+  }
+  if (props.selectedObject) {
+    return <Result value={props.selectedObject} />;
+  }
+  if (props.selectedCluster) {
+    return <Results
+      results={props.selectedCluster.values}
+      onClickItem={(res: Reducer.BrtObject | Reducer.BrtCluster) => {
+        //als het een cluster object is, laat dan dit clusterobject zien.
+        if ("values" in res) {
+          props.dispatch({ type: "selectCluster", value: res });
+        } else {
+          props.dispatch({ type: "selectObject", value: res });
+        }
+      }}
+      onMouseEnterItem={item => {
+        LeafletUtils.findMarkerByUrl(item.url)?.fire("mouseover");
+      }}
+      onMouseLeaveItem={item => {
+        LeafletUtils.findMarkerByUrl(item.url)?.fire("mouseout");
+      }}
+    />;
+  }
+  if (props.searchResults.length) {
+    return (
+      <Results
+        results={props.searchResults}
+        onClickItem={(res: Reducer.BrtObject | Reducer.BrtCluster) => {
+          //als het een cluster object is, laat dan dit clusterobject zien.
+          if ("values" in res) {
+            props.dispatch({ type: "selectCluster", value: res });
+          } else {
+            props.dispatch({ type: "selectObject", value: res });
+          }
+        }}
+        onMouseEnterItem={item => {
+          LeafletUtils.findMarkerByUrl(item.url)?.fire("mouseover");
+        }}
+        onMouseLeaveItem={item => {
+          LeafletUtils.findMarkerByUrl(item.url)?.fire("mouseout");
+        }}
+      />
+    );
+  }
+  return null;
+};
+
 /**
  * Defined outside the functional component, as we want to debounce this
  * (otherwise, we'd create a new debounced function for every rerender)
  */
-const doSearch = _.debounce((text: string, dispatch:React.Dispatch<Reducer.Action> ) => {
+const doSearch = _.debounce((text: string, dispatch: React.Dispatch<Reducer.Action>) => {
   /**
    * Roep de getMatch functie aan van de communicator
    **/
   dispatch({ type: "search_start", value: text });
-
 
   search(text, () => {
     dispatch({ type: "clustering" });
   })
     .then(res => {
       if (res !== undefined) {
+        console.log(text,res)
         //It's undefined when a new search operation was started in the meantime
         //(e.g., when typing)
-        dispatch({ type: "search_success", value: text,results: res.results });
+        dispatch({ type: "search_success", value: text, results: res.results });
       }
     })
-    .catch((e) => {
-      console.error(e)
-      dispatch({ type: "search_error",value: text });
+    .catch(e => {
+      console.error(e);
+      dispatch({ type: "search_error", value: text });
     });
-
-  // Promise.resolve().then((res: string) =>{
-  //   if (res === "waiting") {
-  //     dispatch({type:'clustering', value: text})
-  //   }
-  // })
-  // Communicator.getMatch(text.trim(), this.state.currentSelected, this.setResFromOutside).then(res => {
-  //     //als je een error terug krijgt, dan betekent dat je wel een antwoord hebt maar dat het niet werkt.
-  //
-  //     //als er waiting terug komt wacht dan.
-  //     if(res === "waiting"){
-  //         this.setState({
-  //             updateIng : true,
-  //             isFetching: false
-  //         })
-  //         //anders laat niets zien.
-  //     }else if (res === "error") {
-  //         this.setState({
-  //             isFetching: false
-  //         })
-  //
-  //         //als je undefined terug krijgt betekent het dat het een oude search query is.
-  //         //Dus als het niet undefined is, betekent dat het het huidige search query is.
-  //     } else if (res !== undefined) {
-  //
-  //         this.setState({
-  //             isFetching: false
-  //         });
-  //         this.state.results.setResults(res);
-  //     }
-  // });
 }, 500);
-
 
 export default App;

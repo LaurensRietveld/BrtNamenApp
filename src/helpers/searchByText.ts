@@ -20,10 +20,10 @@ export async function search(text:string, onStartClustering: () => void) {
 
     const jsonResponse:ElasticResults = JSON.parse(await res.text());
 
-
+    console.log('elastic hits', jsonResponse.hits.hits.length)
     const descriptions = await queryResourcesDescriptions(jsonResponse.hits.hits.map(r => r._id))
-
     onStartClustering();
+    console.log('descriptions', descriptions.length)
     return utils.clusterObjects(descriptions, text);
 
 }

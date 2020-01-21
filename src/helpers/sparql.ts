@@ -1,4 +1,4 @@
-import {BrtObject} from '../reducer'
+import {BrtObject,BrtCluster} from '../reducer'
 import {sortByGeoMetryAndName} from '../helpers/utils'
 import * as wellKnown from "wellknown";
 import * as utils from "./utils";
@@ -32,7 +32,7 @@ export type BindingValue = {
  */
 export async function queryResourcesDescriptions(iris: string[]) {
 
-    let res = await queryTriply(getResourceDescriptionQuery(iris));
+    let res = await queryTriply(getResourceDescriptionsQuery(iris));
     let returnObject: BrtObject[] = []
 
     // De query zorgt ervoor dat meerdere keren hetzelfde object wordt terug gegeven. Hierdoor moet je ze bij elkaar rapen
@@ -157,7 +157,7 @@ export async function queryTriply(query:string):Promise<SparqlResults> {
 /**
  * Query die heel veel values in één keer ophaalt.
  */
-export function getResourceDescriptionQuery(resources: string[]) {
+export function getResourceDescriptionsQuery(resources: string[]) {
 
     return `
     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -183,3 +183,149 @@ export function getResourceDescriptionQuery(resources: string[]) {
   }
 `
 }
+
+export interface VerboseDescription {
+    names: {
+
+      naam: string,
+      naamOfficieel:string,
+      naamNl:string,
+      naamFries:string,
+      burgNaam:string,
+      tunnelNaam:string,
+      sluisNaam:string,
+      knoopPuntNaam:string,
+    },
+    type :string[],
+    remaining: {key:string, value:string}[]
+
+}
+export async function getVerboseDescription(obj: BrtObject | BrtCluster):Promise<VerboseDescription> {
+    /**
+     * Haal alle attributen van
+     */
+
+
+    let res = await queryTriply(`
+      PREFIX brt: <http://brt.basisregistraties.overheid.nl/def/top10nl#>
+      PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+      SELECT * WHERE {
+        <${obj.url}> ?prd ?obj.
+      }`);
+
+
+
+      let nodes = res.results.bindings;
+
+      let naam:string;
+      let naamNl:string;
+      let naamFries:string;
+      let naamOfficieel:string;
+      let burgNaam:string;
+      let tunnelNaam:string;
+      let knoopPuntNaam:string;
+      let sluisNaam:string;
+      let types:string[] = [];
+      let overigeAttributen:{key:string, value:string}[] = [];
+
+          /**
+           * Ga langs elk attribuut en voeg deze toe aan het correcte attribuut
+           */
+          for (let i = 0; i < nodes.length; i++) {
+              let key = utils.stripUrlToType(nodes[i].prd.value);
+              let value = nodes[i].obj.value;
+
+              if (key === "naam") {
+                  naam = value;
+              } else if (key === "brugnaam") {
+                  value = value.replace(/\|/g, "");
+                  burgNaam = value;
+              } else if (key === "tunnelnaam") {
+                  value = value.replace(/\|/g, "");
+                  tunnelNaam = value;
+              } else if (key === "sluisnaam") {
+                  value = value.replace(/\|/g, "");
+                  sluisNaam = value;
+              } else if (key === "knooppuntnaam") {
+                  value = value.replace(/\|/g, "");
+                  knoopPuntNaam = value;
+              } else if (key === "naamNL") {
+                  naamNl = value;
+              } else if (key === "naamFries") {
+                  naamFries = value;
+              } else if (key === "type") {
+                  types.push((utils.stripUrlToType(value)));
+              } else if (key === "naamOfficieel") {
+                  naamOfficieel = value.replace(/\|/g, "");
+
+                  //labels moeten er niet in want dat wou jasper niet.
+              } else if (key !== "label") {
+                  let formattedKey;
+
+                  //vervang een aantal attributen handmatig.
+                  if (key === "isBAGnaam") {
+                      formattedKey = "BAG-naam";
+                  } else if (key === "isBAGwoonplaats") {
+                      formattedKey = "BAG-woonplaats";
+                  } else if (key === "aantalinwoners") {
+                      formattedKey = "Aantal inwoners"
+                  } else {
+                      //andere automatisch
+                      formattedKey = utils.seperateUpperCase(key)
+                  }
+
+                  //als deze attributen er in zitten haal deze naar boven.
+                  if (key === "soortnaam" || key === "isBAGwoonplaats" || key === "bebouwdeKom" || key === "aantalinwoners" || key === "getijdeinvloed"
+                      || key === "hoofdafwatering" || key === "isBAGnaam" || key === "elektrificatie" || key === "gescheidenRijbaan") {
+
+                      //behalve deze twee zorg ervoor dat de 1 of 0 wordt vervangen met ja of nee
+                      if (key !== "aantalinwoners" && key !== "soortnaam") {
+                          value = utils.veranderNaarJaNee(value);
+                      }
+
+                      overigeAttributen.unshift({key: (formattedKey), value: value});
+                  } else {
+                      overigeAttributen.push({key: (formattedKey), value: value});
+                  }
+              }
+          }
+
+          //Raap eerst alle types bij elkaar
+          //krijg dan de stipped url en dan de meest speciefieke type
+          //Dus Sporthal komt voor Gebouw want Sporthal is specefieker.
+          let indexes = [];
+          for (let i = 0; i < types.length; i++) {
+              let index = utils.getIndexOfClasses(types[i]);
+              let value = utils.seperateUpperCase(types[i]);
+              indexes.push({index: index, type: value});
+          }
+
+          //krijg de meest relevante type. Dit kon ik ook eigenlijk uit de res halen. Je kan er ook voor kiezen om alle types te
+          //tonen.
+          indexes.sort((a, b) => {
+              return a.index - b.index;
+          });
+
+          if (obj.geojson.type !== "Point") {
+              let area = utils.calculateArea(utils.objectOrClusterToGeojson(obj));
+              overigeAttributen.push({key: "oppervlakte", value: area});
+          }
+
+          return {
+            names: {
+
+              naam,
+              naamOfficieel,
+              naamNl,
+              naamFries,
+              burgNaam,
+              tunnelNaam,
+              sluisNaam,
+              knoopPuntNaam,
+            },
+            type: [indexes[0].type],
+            remaining: overigeAttributen,
+          }
+      }

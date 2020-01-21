@@ -35,6 +35,10 @@ export type Action =
   | { type: "clustering" }
   | { type: "setMapClustered"; value: boolean }
   | { type: "zoomChange"; value: number }
+  | { type: "selectCluster"; value: BrtCluster }
+  | { type: "selectObject"; value: BrtObject }
+  | { type: "resetSelectedCluster"; }
+  | { type: "resetSelectedObject";  }
   // | { type: "clustering_success"; results: State["searchResults"] }
   // | { type: "clustering_error" }
   | { type: "reset" };
@@ -112,6 +116,18 @@ export const reducer: React.Reducer<State, Action> = immer.produce((state: State
       return initialState;
     case "setMapClustered":
       state.mapClustered = action.value;
+      return state;
+    case "selectCluster":
+      state.selectedCluster = action.value;
+      return state;
+    case "selectObject":
+      state.selectedObject = action.value;
+      return state;
+    case "resetSelectedCluster":
+      state.selectedCluster = null;
+      return state;
+    case "resetSelectedObject":
+      state.selectedObject = null;
       return state;
     case "zoomChange":
       state.zoomLevel = action.value;

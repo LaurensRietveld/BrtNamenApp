@@ -644,7 +644,6 @@ export async function clusterObjects(res: BrtObject[], text: string, isMax?: boo
     //post de res objecten naar de worker.
     worker.postMessage({ res: res, text: text, isMax: isMax });
     return new Promise<{ results: Array<BrtObject | BrtCluster>; exact: boolean }>((resolve, reject) => {
-      //als de werker klaar is moet je het weer omzetten naar Javascript classen.
       worker.onmessage = (workerResponse: {
         data: {
           objectsNotInClusters: BrtObject[];
@@ -989,7 +988,7 @@ export function processGetAllAttributes(res: SparqlResults, clickedRes: any) {
  * @param feature
  * @returns {string}
  */
-function calculateArea(feature: any): string {
+export function calculateArea(feature: any): string {
   let area = Math.round(turf.area(feature));
   return area.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " m2";
 }
