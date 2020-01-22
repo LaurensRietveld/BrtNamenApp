@@ -10,6 +10,7 @@ import * as MiniCssExtractPlugin from "mini-css-extract-plugin";
 var TerserPlugin = require("terser-webpack-plugin");
 import * as OptimizeCSSAssetsPlugin from "optimize-css-assets-webpack-plugin";
 
+
 import { BundleAnalyzerPlugin } from "webpack-bundle-analyzer";
 export const analyzeBundle = process.env["ANALYZE_BUNDLE"] === "true";
 
@@ -24,24 +25,29 @@ if (isDev) {
   plugins.push(new webpack.WatchIgnorePlugin([/\.js$/, /\.d\.ts$/]));
   plugins.push(new LiveReloadPlugin({ port: 35731 }));
   plugins.push(new webpack.HotModuleReplacementPlugin());
-  plugins.push(
-    new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, "index.html")
-    })
-  );
-  // } else {
-  //   plugins.push(
-  //     new MiniCssExtractPlugin({
-  //       moduleFilename: ({ name }) => `${name.toLowerCase()}.min.css`
-  //     } as any)
-  //   );
+
+  } else {
+    plugins.push(
+      new MiniCssExtractPlugin({
+        filename: '[name].css',
+        chunkFilename: '[id].css',
+      })
+    );
 }
+plugins.push(
+  new HtmlWebpackPlugin({
+    template: path.resolve(__dirname, "index.html"),
+    filename: 'index.html',
+    favicon: "./src/assets/Logo-kadaster.png"
+  })
+);
+
 if (analyzeBundle) plugins.push(new BundleAnalyzerPlugin());
 
 export const genericConfig: webpack.Configuration = {
-  //We're cannot use all source map implementations because of the terser plugin
+  //We cannot use all source map implementations because of the terser plugin
   //See https://webpack.js.org/plugins/terser-webpack-plugin/#sourcemap
-  devtool: isDev ? "inline-source-map" : "source-map",
+  devtool: isDev ? "inline-source-map" : false,
   cache: isDev,
   optimization: {
     minimize: true, //If you're debugging the production build, set this to false
@@ -111,7 +117,7 @@ export const genericConfig: webpack.Configuration = {
         test: /\.scss$/,
         use: [
           isDev ? "style-loader" : MiniCssExtractPlugin.loader,
-          { loader: "css-loader", options: { importLoaders: 2 } },
+          { loader: "css-loader", options: { importLoaders:1 } },
           // {
           //   loader: "postcss-loader",
           //   options: { plugins: [autoprefixer()] }
@@ -134,7 +140,8 @@ export const genericConfig: webpack.Configuration = {
         test: /\.css$/,
         use: [
           isDev ? "style-loader" : MiniCssExtractPlugin.loader,
-          { loader: "css-loader", options: { importLoaders: 1 } }
+          { loader: "css-loader" }
+          // { loader: "css-loader", options: { importLoaders: 1 } }
           // {
           //   loader: "postcss-loader",
           //   options: { plugins: () => [bgImage({ mode: "cutter" })] }

@@ -2,44 +2,48 @@ import React from "react";
 import * as immer from "immer";
 
 export interface State {
-  searchQuery: string;
+  clickedLayer: {x: number, y: number, values: Array<BrtObject | BrtCluster>}
   contextQuery: ContextQuery;
-  isFetching: boolean; // Fetching results from API
   isClustering: boolean; //Clustering of objects
+  isFetching: boolean; // Fetching results from API
+  mapClustered: boolean;
+  searchQuery: string;
   searchResults: Array<BrtObject | BrtCluster>;
   selectedCluster: BrtCluster;
   selectedObject: BrtObject;
-  mapClustered: boolean;
   zoomLevel: number;
 }
 export const initialState: State = {
-  searchQuery: "",
-  isFetching: false,
+  clickedLayer: undefined,
   contextQuery: undefined,
   isClustering: false,
+  isFetching: false,
+  mapClustered: true,
+  searchQuery: "",
   searchResults: [],
   selectedCluster: undefined,
   selectedObject: undefined,
-  mapClustered: true,
-  zoomLevel: 8 //default leaflet zoom level
+  zoomLevel: 8, //default leaflet zoom level
 };
 
 export type Action =
-  | { type: "typeSearch"; value: string }
-  | { type: "search_start"; value: string }
-  | { type: "search_success"; value: string; results: State["searchResults"] }
-  | { type: "search_error"; value: string }
+  | { type: "clickLayer", value: {x: number, y:number, values:Array<BrtObject | BrtCluster> }}
+  | { type: "closeClickedLayer" }
+  | { type: "clustering" }
+  | { type: "context_search_error" }
   | { type: "context_search_start"; value: ContextQuery }
   | { type: "context_search_success"; results: State["searchResults"] }
-  | { type: "context_search_error" }
-  | { type: "clustering" }
-  | { type: "setMapClustered"; value: boolean }
-  | { type: "zoomChange"; value: number }
-  | { type: "selectCluster"; value: BrtCluster }
-  | { type: "selectObject"; value: BrtObject }
+  | { type: "reset" }
   | { type: "resetSelectedCluster" }
   | { type: "resetSelectedObject" }
-  | { type: "reset" };
+  | { type: "search_error"; value: string }
+  | { type: "search_start"; value: string }
+  | { type: "search_success"; value: string; results: State["searchResults"] }
+  | { type: "selectCluster"; value: BrtCluster }
+  | { type: "selectObject"; value: BrtObject }
+  | { type: "setMapClustered"; value: boolean }
+  | { type: "typeSearch"; value: string }
+  | { type: "zoomChange"; value: number }
 
 //Single element
 export interface BrtObject {
@@ -101,8 +105,8 @@ export const reducer: React.Reducer<State, Action> = immer.produce((state: State
       state.searchQuery = ""; //context search, so want search query empty
       state.contextQuery = action.value;
       state.searchResults = [];
-      state.selectedObject = null;
-      state.selectedCluster = null;
+      state.selectedObject = undefined;
+      state.selectedCluster = undefined;
       return state;
     case "context_search_error":
       state.isFetching = false;
@@ -120,15 +124,23 @@ export const reducer: React.Reducer<State, Action> = immer.produce((state: State
       return state;
     case "selectCluster":
       state.selectedCluster = action.value;
+      state.clickedLayer = undefined//might be selected from layer popup
       return state;
     case "selectObject":
       state.selectedObject = action.value;
+      state.clickedLayer = undefined//might be selected from layer popup
       return state;
     case "resetSelectedCluster":
-      state.selectedCluster = null;
+      state.selectedCluster = undefined;
       return state;
     case "resetSelectedObject":
-      state.selectedObject = null;
+      state.selectedObject = undefined;
+      return state;
+    case "clickLayer":
+      state.clickedLayer = action.value;
+      return state;
+    case "closeClickedLayer":
+      state.clickedLayer = undefined
       return state;
     case "zoomChange":
       state.zoomLevel = action.value;

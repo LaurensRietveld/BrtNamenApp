@@ -6,7 +6,6 @@ import React from "react";
 import _ from "lodash";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "./styles.scss";
 import * as Reducer from "./reducer";
 import { getFromCoordinates } from "./helpers/searchByPoint";
 import { search } from "./helpers/searchByText";
@@ -14,11 +13,11 @@ import { search } from "./helpers/searchByText";
 /**
  * UI
  */
-// import Routes from './routes/Routes'
+import "./styles.scss";
 import { Icon, Search } from "semantic-ui-react";
-// import NavBar from "./components/NavBar";
 import Loader from "./components/Loader";
 import StartMessage from "./components/StartMessage";
+import LayerSelectorPopup from "./components/LayerSelectorPopup";
 import Results from "./components/Results";
 import Result from "./components/Result";
 import ResultsBar from "./components/ResultsBar";
@@ -26,7 +25,6 @@ import ResultsBar from "./components/ResultsBar";
 /**
  * Assets
  */
-// import './App.css';
 import KadasterImg from "./assets/Logo-kadaster.png";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
@@ -56,6 +54,9 @@ const App: React.FC = () => {
         } else {
           dispatch({ type: "selectObject", value: el });
         }
+      },
+      onLayersClick: info => {
+        dispatch({ type: "clickLayer", value: info });
       }
     });
     // //Set default query for debugging
@@ -181,7 +182,7 @@ const App: React.FC = () => {
             <Loader loading={state.isFetching} />
           </div>
           <div className="resultPartContainer">
-            <ResultsBody
+            <LeftPaneBody
               searchQuery={state.searchQuery}
               contextQuery={state.contextQuery}
               dispatch={dispatch}
@@ -202,6 +203,17 @@ const App: React.FC = () => {
         <div id="map" />
       </div>
 
+      <LayerSelectorPopup
+        handleClose={() => dispatch({ type: "closeClickedLayer" })}
+        handleClick={el => {
+          if ("types" in el) {
+            dispatch({ type: "selectCluster", value: el });
+          } else {
+            dispatch({ type: "selectObject", value: el });
+          }
+        }}
+        options={state.clickedLayer}
+      />
       <ToastContainer />
     </section>
   );
@@ -215,7 +227,7 @@ interface Props {
   selectedCluster: Reducer.BrtCluster;
   contextQuery: Reducer.State["contextQuery"];
 }
-const ResultsBody: React.FC<Props> = props => {
+const LeftPaneBody: React.FC<Props> = props => {
   if (!props.searchResults.length && !props.searchQuery && !props.contextQuery) {
     return <StartMessage />;
   }

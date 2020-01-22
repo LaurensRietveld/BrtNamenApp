@@ -36,6 +36,7 @@ export function init(opts: {
   onContextSearch: (context: Reducer.ContextQuery) => void;
   onZoomChange: (zoomLevel: number) => void;
   onClick: (el: Reducer.BrtObject | Reducer.BrtCluster) => void;
+  onLayersClick: (info: Reducer.State["clickedLayer"]) => void;
 }) {
   //opties van de kaart
   map = L.map("map", {
@@ -288,21 +289,25 @@ export function init(opts: {
         opts.onClick(feature.properties as any);
       } else {
         //agrageer de opties en geef deze aan het context menu
-        let options = contains.reverse().map(res => {
-          let func = () => {
-            opts.onClick(res.properties);
-          };
-
-          return {
-            head: res.properties.name,
-            sub: res.properties.type,
-            subColor: res.properties.color,
-            onClick: func
-          };
+        // let options = contains.reverse().map(res => {
+        //   // let func = () => {
+        //   //   opts.onClick(res.properties);
+        //   // };
+        //
+        //   return {
+        //     head: res.properties.name,
+        //     sub: res.properties.type,
+        //     subColor: res.properties.color,
+        //     onClick: func
+        //   };
+        // });
+        opts.onLayersClick({
+          x: e.originalEvent.pageX,
+          y: e.originalEvent.pageY,
+          values: contains.reverse().map(res => res.properties)
         });
-
         // this.setState({
-        //     clickedOnLayeredMap: {x: e.originalEvent.pageX, y: e.originalEvent.pageY},
+        //     clickedOnLayeredMap: ,
         //     objectsOverLayedOnMap: options
         // });
       }
@@ -352,10 +357,10 @@ export function updateMap(opts: {
   // als er een geklikt resultaat is, render dan alleen deze
   if (opts.selectedObject) {
     geoJsonLayer.addData(objectOrClusterToGeojson(opts.selectedObject));
-    map.fitBounds(L.featureGroup([geoJsonLayer, markerGroup]).getBounds(), { maxZoom: 10 });
+    if (opts.updateZoom) map.fitBounds(L.featureGroup([geoJsonLayer, markerGroup]).getBounds(), { maxZoom: 10 });
   } else if (opts.searchResults.length) {
     geoJsonLayer.addData(getAllObjectsOrClustersAsFeature(opts.searchResults) as any);
-    map.fitBounds(L.featureGroup([geoJsonLayer, markerGroup]).getBounds(), { maxZoom: 10 });
+    if (opts.updateZoom) map.fitBounds(L.featureGroup([geoJsonLayer, markerGroup]).getBounds(), { maxZoom: 10 });
   } else if (opts.updateZoom) {
     centerMap();
   }
