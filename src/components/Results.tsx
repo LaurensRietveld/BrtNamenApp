@@ -1,11 +1,11 @@
 import React from "react";
-import { State, BrtObject, BrtCluster } from "../reducer";
+import { State, SingleObject, GroupedObject } from "../reducer";
 import { getHexFromColor } from "../helpers/utils";
 export interface Props {
   results: State["searchResults"];
-  onClickItem: (item: BrtObject | BrtCluster) => void;
-  onMouseEnterItem: (item: BrtObject | BrtCluster) => void;
-  onMouseLeaveItem: (item: BrtObject | BrtCluster) => void;
+  onClickItem: (item: SingleObject | GroupedObject) => void;
+  onMouseEnterItem: (item: SingleObject | GroupedObject) => void;
+  onMouseLeaveItem: (item: SingleObject | GroupedObject) => void;
 }
 const Results: React.FC<Props> = props => {
   // let results;

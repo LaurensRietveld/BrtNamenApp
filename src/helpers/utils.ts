@@ -7,7 +7,7 @@
  *
  * Hier zitten ook een aantal methodes in die door de front end worden aangeroepen.
  */
-import { BrtCluster, BrtObject } from "../reducer";
+import { GroupedObject, SingleObject } from "../reducer";
 import * as wellKnown from "wellknown";
 // import Resultaat from "../model/Resultaat";
 import * as turf from "@turf/turf";
@@ -370,7 +370,7 @@ export function getIndexOfClasses(className: string): number {
  * @param res
  * @returns {boolean}
  */
-export function isShownClickedResults(res: BrtObject): boolean {
+export function isShownClickedResults(res: SingleObject): boolean {
   return res.type !== "Land" && res.type !== "Provincie";
 }
 
@@ -416,10 +416,10 @@ export function getColor(type: string): string {
  * Wordt door de front-end gebruikt om de layering te bepalen.
  * @param list de lijst die jezelf kan sorteren.
  */
-export function sortByObjectClass(list: GeoJSON.Feature<GeoJSON.Geometry, BrtObject | BrtCluster>[]) {
+export function sortByObjectClass(list: GeoJSON.Feature<GeoJSON.Geometry, SingleObject | GroupedObject>[]) {
   return list.sort((a, b) => {
-    const objA = a.properties as BrtObject | BrtCluster;
-    const objB = b.properties as BrtObject | BrtCluster;
+    const objA = a.properties as SingleObject | GroupedObject;
+    const objB = b.properties as SingleObject | GroupedObject;
 
     if (objA.type === "Provincie" || objB.type === "Provincie") {
       if (objA.type === "Provincie" && objB.type === "Provincie") {
@@ -632,7 +632,7 @@ let latestString: string;
  * @param setMethod de methode om de resultaten te zettten.
 
  */
-export async function clusterObjects(res: BrtObject[], text: string, isMax?: boolean) {
+export async function clusterObjects(res: SingleObject[], text: string, isMax?: boolean) {
   //kijk eerst of de webbrowser een webworker heeft. Anders doe het in de ui thread.
   if (window.Worker) {
     //laatste string waarop is gezocht.
@@ -643,13 +643,13 @@ export async function clusterObjects(res: BrtObject[], text: string, isMax?: boo
     }
     //post de res objecten naar de worker.
     worker.postMessage({ res: res, text: text, isMax: isMax });
-    return new Promise<{ results: Array<BrtObject | BrtCluster>; exact: boolean }>((resolve, reject) => {
+    return new Promise<{ results: Array<SingleObject | GroupedObject>; exact: boolean }>((resolve, reject) => {
       worker.onmessage = (workerResponse: {
         data: {
-          objectsNotInClusters: BrtObject[];
+          objectsNotInClusters: SingleObject[];
           text: string;
           isMax: boolean;
-          clusters: BrtCluster[];
+          clusters: GroupedObject[];
         };
       }) => {
         try {
@@ -660,7 +660,7 @@ export async function clusterObjects(res: BrtObject[], text: string, isMax?: boo
 
           //als de gebruiker niets nieuws heeft opgezocht.
           if (originalquery === latestString) {
-            let results = [...data.objectsNotInClusters, ...data.clusters] as Array<BrtObject | BrtCluster>;
+            let results = [...data.objectsNotInClusters, ...data.clusters] as Array<SingleObject | GroupedObject>;
 
             if (text !== undefined) {
               //sorteer het nog even zodat exacte resultaten naar voren komen.
@@ -692,8 +692,8 @@ export async function clusterObjects(res: BrtObject[], text: string, isMax?: boo
  */
 export function bringExactNameToFront(
   string: string,
-  res: Array<BrtObject | BrtCluster>
-): Array<BrtObject | BrtCluster> {
+  res: Array<SingleObject | GroupedObject>
+): Array<SingleObject | GroupedObject> {
   let j = 0;
   string = string.toUpperCase();
 
@@ -716,8 +716,8 @@ export function bringExactNameToFront(
  * @param latestString
  * @returns {[]}
  */
-export function processSearchScreenResults(res: SparqlResults, latestString: string): BrtObject[] {
-  let returnObject: BrtObject[] = [];
+export function processSearchScreenResults(res: SparqlResults, latestString: string): SingleObject[] {
+  let returnObject: SingleObject[] = [];
   const bindings = res.results.bindings;
 
   //Het kan zo zijn dat hetzelfde object met dezelfde uri meerdere keren kan voorkomen in de res. Hierom wordt er eerst,
@@ -1030,8 +1030,8 @@ export function getHexFromColor(color: string, text?: boolean): string {
 }
 
 export function objectOrClusterToGeojson(
-  val: BrtObject | BrtCluster
-): GeoJSON.Feature<GeoJSON.Geometry, BrtObject | BrtCluster> {
+  val: SingleObject | GroupedObject
+): GeoJSON.Feature<GeoJSON.Geometry, SingleObject | GroupedObject> {
   return {
     type: "Feature",
     properties: val,
@@ -1039,8 +1039,8 @@ export function objectOrClusterToGeojson(
   };
 }
 
-export function getAllObjectsOrClustersAsFeature(values: Array<BrtObject | BrtCluster>): GeoJSON.Feature[] {
-  let geojson: GeoJSON.Feature<GeoJSON.Geometry, BrtObject | BrtCluster>[] = [];
+export function getAllObjectsOrClustersAsFeature(values: Array<SingleObject | GroupedObject>): GeoJSON.Feature[] {
+  let geojson: GeoJSON.Feature<GeoJSON.Geometry, SingleObject | GroupedObject>[] = [];
 
   for (const val of values) {
     if ("values" in val) {

@@ -1,18 +1,18 @@
 import React from 'react';
 import _ from 'lodash';
 import {useWindowSize} from '../helpers/hooks'
-import {BrtCluster, BrtObject} from '../reducer'
+import {GroupedObject, SingleObject} from '../reducer'
 import {getHexFromColor} from '../helpers/utils'
 
 
 interface Props {
 
   handleClose: () => void
-  handleClick: (clicked: BrtCluster|BrtObject) => void
+  handleClick: (clicked: GroupedObject|SingleObject) => void
   options: {
     x: number,
     y: number,
-    values: Array<BrtCluster|BrtObject>
+    values: Array<GroupedObject|SingleObject>
   }
 }
 const Popup:React.FC<Props> = ({handleClose,handleClick,options}) => {

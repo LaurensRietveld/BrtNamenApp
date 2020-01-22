@@ -1,12 +1,12 @@
 import * as React from "react";
-import { State, BrtObject, BrtCluster } from "../reducer";
+import { State, SingleObject, GroupedObject } from "../reducer";
 import { getVerboseDescription, VerboseDescription } from "../helpers/sparql";
 import { getHexFromColor } from "../helpers/utils";
 /**
  * Dit is het scherm dat het geklikte object laat zien.
  */
 export interface Props {
-  value: BrtObject | BrtCluster;
+  value: SingleObject | GroupedObject;
 }
 export const Result: React.FC<Props> = ({ value }) => {
   const [description, setDescription] = React.useState<VerboseDescription>(undefined);

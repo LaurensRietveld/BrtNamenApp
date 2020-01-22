@@ -169,7 +169,7 @@ const config: webpack.Configuration = {
   ...genericConfig,
   output: {
     path: path.resolve("build"),
-    publicPath: "/",
+    // publicPath: "/",
     filename: function(chunkData: any) {
       const ext = `${isDev ? "" : ".min"}.js`;
       return `${chunkData.chunk.name.toLowerCase()}${ext}`;

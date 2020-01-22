@@ -1,4 +1,4 @@
-import { BrtObject, BrtCluster } from "../reducer";
+import { SingleObject, GroupedObject } from "../reducer";
 import { sortByGeoMetryAndName } from "../helpers/utils";
 import * as wellKnown from "wellknown";
 import * as utils from "./utils";
@@ -33,7 +33,7 @@ export type BindingValue =
  */
 export async function queryResourcesDescriptions(iris: string[]) {
   let res = await queryTriply(getResourceDescriptionsQuery(iris));
-  let returnObject: BrtObject[] = [];
+  let returnObject: SingleObject[] = [];
 
   // De query zorgt ervoor dat meerdere keren hetzelfde object wordt terug gegeven. Hierdoor moet je ze bij elkaar rapen
   // De key voor de map is de linked data url
@@ -196,7 +196,7 @@ export interface VerboseDescription {
   type: string[];
   remaining: { key: string; value: string }[];
 }
-export async function getVerboseDescription(obj: BrtObject | BrtCluster): Promise<VerboseDescription> {
+export async function getVerboseDescription(obj: SingleObject | GroupedObject): Promise<VerboseDescription> {
   /**
    * Haal alle attributen van
    */

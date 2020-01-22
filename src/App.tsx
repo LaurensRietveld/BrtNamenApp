@@ -223,8 +223,8 @@ interface Props {
   searchQuery: string;
   searchResults: Reducer.State["searchResults"];
   dispatch: React.Dispatch<Reducer.Action>;
-  selectedObject: Reducer.BrtObject;
-  selectedCluster: Reducer.BrtCluster;
+  selectedObject: Reducer.SingleObject;
+  selectedCluster: Reducer.GroupedObject;
   contextQuery: Reducer.State["contextQuery"];
 }
 const LeftPaneBody: React.FC<Props> = props => {
@@ -238,7 +238,7 @@ const LeftPaneBody: React.FC<Props> = props => {
     return (
       <Results
         results={props.selectedCluster.values}
-        onClickItem={(res: Reducer.BrtObject | Reducer.BrtCluster) => {
+        onClickItem={(res: Reducer.SingleObject | Reducer.GroupedObject) => {
           //als het een cluster object is, laat dan dit clusterobject zien.
           if ("values" in res) {
             props.dispatch({ type: "selectCluster", value: res });
@@ -259,7 +259,7 @@ const LeftPaneBody: React.FC<Props> = props => {
     return (
       <Results
         results={props.searchResults}
-        onClickItem={(res: Reducer.BrtObject | Reducer.BrtCluster) => {
+        onClickItem={(res: Reducer.SingleObject | Reducer.GroupedObject) => {
           //als het een cluster object is, laat dan dit clusterobject zien.
           if ("values" in res) {
             props.dispatch({ type: "selectCluster", value: res });

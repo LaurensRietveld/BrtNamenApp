@@ -3,7 +3,7 @@
 import * as utils from "./utils";
 import { queryTriply, queryResourcesDescriptions } from "./sparql";
 
-import { BrtObject, ContextQuery } from "../reducer";
+import { SingleObject, ContextQuery } from "../reducer";
 /**
  * Haalt dingen op aan de hand van de gegeven coordinaten.
  *
@@ -54,7 +54,7 @@ export async function getFromCoordinates(ctx: ContextQuery, onStartClustering: (
  * @param regex
 
  */
-function mergeResults<E extends BrtObject>(exact: E[], regex: E[]): E[] {
+function mergeResults<E extends SingleObject>(exact: E[], regex: E[]): E[] {
   exact.forEach(resexact => {
     regex = regex.filter(resregex => {
       return resexact.url !== resregex.url;

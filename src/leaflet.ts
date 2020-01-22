@@ -29,13 +29,13 @@ let popup: L.Popup;
 //   onMouseOut?: () => void
 //   onMouseOver?: () => void
 // }
-export type FeatureProperties = Reducer.BrtCluster | Reducer.BrtObject;
-export type BrtFeature = GeoJson.Feature<GeoJson.Geometry, FeatureProperties>;
+export type FeatureProperties = Reducer.GroupedObject | Reducer.SingleObject;
+export type GeojsonFeature = GeoJson.Feature<GeoJson.Geometry, FeatureProperties>;
 
 export function init(opts: {
   onContextSearch: (context: Reducer.ContextQuery) => void;
   onZoomChange: (zoomLevel: number) => void;
-  onClick: (el: Reducer.BrtObject | Reducer.BrtCluster) => void;
+  onClick: (el: Reducer.SingleObject | Reducer.GroupedObject) => void;
   onLayersClick: (info: Reducer.State["clickedLayer"]) => void;
 }) {
   //opties van de kaart
@@ -137,7 +137,7 @@ export function init(opts: {
     });
   };
 
-  const addMarkerForNonPoint = (feature: BrtFeature, latlng: L.LatLng) => {
+  const addMarkerForNonPoint = (feature: GeojsonFeature, latlng: L.LatLng) => {
     //maak een marker aan
     let marker = L.marker(latlng);
     marker.feature = {
@@ -190,7 +190,7 @@ export function init(opts: {
    * Wordt aangeroepen elke keer als er een geojson object wordt getekend.
    **/
   const handleGeoJsonLayerDrawing = (
-    feature: GeoJson.Feature<GeoJson.Geometry, Reducer.BrtCluster | Reducer.BrtCluster>,
+    feature: GeoJson.Feature<GeoJson.Geometry, Reducer.GroupedObject | Reducer.GroupedObject>,
     layer: L.Layer
   ) => {
     if (feature.geometry.type === "Point") return;
@@ -346,7 +346,7 @@ export function centerMap() {
   map.setView([52.20936, 5.2], 8);
 }
 export function updateMap(opts: {
-  selectedObject?: Reducer.BrtObject;
+  selectedObject?: Reducer.SingleObject;
   searchResults?: Reducer.State["searchResults"];
   updateZoom: boolean;
 }) {
@@ -382,12 +382,12 @@ export function toggleClustering(toggle: boolean) {
 }
 
 const getAllFeaturesFromLeaflet = () => {
-  return geoJsonLayer.getLayers().map((l: any) => l.feature) as BrtFeature[];
+  return geoJsonLayer.getLayers().map((l: any) => l.feature) as GeojsonFeature[];
 };
 
 export function findMarkerByUrl(url: string) {
   return markerGroup.getLayers().find((l: any) => {
-    const feature: BrtFeature = l.feature;
+    const feature: GeojsonFeature = l.feature;
     return feature.properties.url === url;
   });
 }
@@ -408,7 +408,7 @@ const getAllGeoJsonObjectContainingPoint = (lng: number, lat: number) => {
  * Krijg de style voor een bepaalde feature
  * @param feature
  */
-const getStyle = (feature: { properties: Reducer.BrtObject | Reducer.BrtCluster }) => {
+const getStyle = (feature: { properties: Reducer.SingleObject | Reducer.GroupedObject }) => {
   if (feature.properties.color) {
     return {
       color: getHexFromColor(feature.properties.color)

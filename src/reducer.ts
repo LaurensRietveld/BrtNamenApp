@@ -2,15 +2,15 @@ import React from "react";
 import * as immer from "immer";
 
 export interface State {
-  clickedLayer: {x: number, y: number, values: Array<BrtObject | BrtCluster>}
+  clickedLayer: {x: number, y: number, values: Array<SingleObject | GroupedObject>}
   contextQuery: ContextQuery;
   isClustering: boolean; //Clustering of objects
   isFetching: boolean; // Fetching results from API
   mapClustered: boolean;
   searchQuery: string;
-  searchResults: Array<BrtObject | BrtCluster>;
-  selectedCluster: BrtCluster;
-  selectedObject: BrtObject;
+  searchResults: Array<SingleObject | GroupedObject>;
+  selectedCluster: GroupedObject;
+  selectedObject: SingleObject;
   zoomLevel: number;
 }
 export const initialState: State = {
@@ -27,7 +27,7 @@ export const initialState: State = {
 };
 
 export type Action =
-  | { type: "clickLayer", value: {x: number, y:number, values:Array<BrtObject | BrtCluster> }}
+  | { type: "clickLayer", value: {x: number, y:number, values:Array<SingleObject | GroupedObject> }}
   | { type: "closeClickedLayer" }
   | { type: "clustering" }
   | { type: "context_search_error" }
@@ -39,14 +39,14 @@ export type Action =
   | { type: "search_error"; value: string }
   | { type: "search_start"; value: string }
   | { type: "search_success"; value: string; results: State["searchResults"] }
-  | { type: "selectCluster"; value: BrtCluster }
-  | { type: "selectObject"; value: BrtObject }
+  | { type: "selectCluster"; value: GroupedObject }
+  | { type: "selectObject"; value: SingleObject }
   | { type: "setMapClustered"; value: boolean }
   | { type: "typeSearch"; value: string }
   | { type: "zoomChange"; value: number }
 
 //Single element
-export interface BrtObject {
+export interface SingleObject {
   url: string;
   name: string;
   type: string;
@@ -56,14 +56,14 @@ export interface BrtObject {
 }
 
 //Grouped elements (by named and geolocation) using worker
-export interface BrtCluster {
+export interface GroupedObject {
   url: string;
   name: string;
   type: string;
   geojson: any;
   color: string;
   objectClass: string; //used for colors
-  values: BrtObject[];
+  values: SingleObject[];
 }
 export interface ContextQuery {
   lat: number;
